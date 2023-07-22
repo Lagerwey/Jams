@@ -30,8 +30,8 @@ export const Weather = () => {
     }; 
 
     useEffect (() => {
-        setClockBgSel(GetVal('ClockBgSel'));
-        setClockBgColor(GetVal('ClockBgColor'));
+        setClockBgSel(GetVal('settings_clock_ClockBgSel'));
+        setClockBgColor(GetVal('settings_clock_ClockBgColor'));
     }, []);
 
     useEffect (() => {

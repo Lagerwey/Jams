@@ -1,6 +1,9 @@
+"use client"
 import './globals.css'
 import { Inter } from 'next/font/google'
 import { NavMenu } from './components/navMenu'
+import { DefaultSettings } from './components/defaultSettings'
+import { useEffect } from 'react'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -15,7 +18,9 @@ export default function RootLayout({
   }: {
     children: React.ReactNode
   }) {
-    
+  useEffect (() => {
+    DefaultSettings();
+  }, []);
   return (
       <html lang="en">
         <body className={inter.className}>

@@ -12,31 +12,31 @@ export const ClockSettings = () => {
   const [bgColorState, setBGColorState] = useColor('hex','#000000');
   
   useEffect (() => {
-      setClockType(GetVal('ClockType'));
-      setClockBgSel(GetVal('ClockBgSel'));
-      setShowDate(GetVal('ClockShowDate'));
-      setClockBgColor(GetVal('ClockBgColor'));
+      setClockType(GetVal('settings_clock_ClockType'));
+      setClockBgSel(GetVal('settings_clock_ClockBgSel'));
+      setShowDate(GetVal('settings_clock_ClockShowDate'));
+      setClockBgColor(GetVal('settings_clock_ClockBgColor'));
       setBGColorState(toColor('hex', clockBgColor));
   }, []);
 
   const handleClockType = (event: { target: { value: string; }; }) => {
-    StoreVal('ClockType', event.target.value);
+    StoreVal('settings_clock_ClockType', event.target.value);
     setClockType(event.target.value);
   };
 
   const handleBgColor = (color: Color) => {
-    StoreVal('ClockBgColor', color.hex);
+    StoreVal('settings_clock_ClockBgColor', color.hex);
     setClockBgColor(color.hex);
     setBGColorState(color);
   };
 
   const handleBgSel = (event: { target: { value: string; }; }) => {
-    StoreVal('ClockBgSel', event.target.value);
+    StoreVal('settings_clock_ClockBgSel', event.target.value);
     setClockBgSel(event.target.value);
   };
 
   const handleShowDate = (event: { target: { checked: boolean; }; }) => {
-    StoreVal('ClockShowDate', event.target.checked.toString());
+    StoreVal('settings_clock_ClockShowDate', event.target.checked.toString());
     setShowDate(event.target.checked.toString());
   };
 

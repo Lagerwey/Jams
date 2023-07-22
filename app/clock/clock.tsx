@@ -13,7 +13,7 @@ export default function ClockGetTime() {
   const [clockType, setClockType] = useState('');
   
   useEffect (() => {
-      setClockType(GetVal('ClockType'));
+      setClockType(GetVal('settings_clock_ClockType'));
   }, []);
   // Set timer to repeat this function every second, use the useEffect hook to
   // make sure this is not called everytime the screen renders
@@ -36,7 +36,7 @@ export function ClockGetDate() {
   const [showDate, setShowDate] = useState('');
   
   useEffect (() => {
-    setShowDate(GetVal('ClockShowDate'));
+    setShowDate(GetVal('settings_clock_ClockShowDate'));
   }, []);
 
   // Set timer to repeat this function every second, use the useEffect hook to
