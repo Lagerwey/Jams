@@ -7,5 +7,5 @@ export function StoreVal(key: string, value: any) {
 
 export function GetVal(key: string) {
     const stored = window.localStorage.getItem(key);
-    return String(stored ? JSON.parse(stored) : '-1');
+    return String(stored ? JSON.parse(stored) : 'undefined');
 }

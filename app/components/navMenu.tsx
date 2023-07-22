@@ -10,7 +10,7 @@ export function NavMenu() {
     return (
         <header className="bg-black">
             <section className="inline-block w-full text-right z-[8] text-white text-6xl ">
-                <button title="menu button" className="h-full" onClick={() => setNavMenu(!navmenu)}>
+                <button type="button" title="menu button" className="h-full" onClick={() => setNavMenu(!navmenu)}>
                     {navmenu && <i className="relative z-[1] mr-4 zmdi zmdi-apps"/>}
                     {!navmenu && <i className="relative z-10 mr-4 zmdi zmdi-apps"/>}
                 </button>
@@ -18,7 +18,7 @@ export function NavMenu() {
             
             <section className={navmenu ? "absolute top-0 origin-top z-[9] bg-gray-900 h-full w-full animate-open-menu" : 
                                           "absolute top-0 origin-top z-[9] bg-gray-900 h-full w-full animate-close-menu"}>
-                <button title="close button" className="w-full text-right z-[9] text-white text-6xl" onClick={() => setNavMenu(!navmenu)}>
+                <button type="button" title="close button" className="w-full text-right z-[9] text-white text-6xl" onClick={() => setNavMenu(!navmenu)}>
                     <i className="relative z-[9] mr-4 zmdi zmdi-close"></i>
                 </button>
                 <nav className="navbar gap-5 mt-20 grid grid-cols-3 text-2xl text-white h-full w-full">
