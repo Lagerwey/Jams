@@ -1,59 +1,52 @@
 "use client"
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GetVal, StoreVal } from "./components/LocalStorage";
 import { io } from "socket.io-client";
 import Image from "next/image";
+import ControlButton from "./components/controlButton";
+import { IfcRoonZoneApi, initZone } from "./components/IfcRoonZoneAPI";
+
 
 // Setup the websocket
 var listenPort = Number(process.env.NEXT_PUBLIC_LISTEN_PORT) + 1;
 const socket = io(`http://localhost:${listenPort}`); 
-
-type StateType = {
-  title: string;
-  line1: string; 
-  line2: string; 
-  line3: string;
-  image_key: string;
-  image_url: string;
-  Prev: any;
-  Next: any;
-  PlayMode: string;
-  PlayModeLast: string;
-  Loop: string;
-  shuffle: string;
-  Radio: string;
-  Theme: string;
-}
 
 type SettingsType = {
   zoneID: string;
   displayName: string; 
   theme: string; 
 }
-var g_curZone = {};
+
+interface ZoneSettings {
+  zone_id: string;
+  setting: string;
+  value: string;
+}
+
+var g_settings:SettingsType = {} as SettingsType;
 
 export default function Home() {
-  var g_state:StateType = {};
-  var g_settings:SettingsType = {};
+  var coverimage_url:string = "";
+  var g_curZone:IfcRoonZoneApi = {} as IfcRoonZoneApi;
   const [pairState, setPairState] = useState(false);
-  const [localStore, setlocalStore] = useState('UNSET');
   const [ZoneSelShow, setZoneSelShow] = useState(false);
-  const [display_name, setdisplay_name] = useState("");
-  const [zone_id, setzone_id] = useState("");
+  const [display_name, setdisplay_name] = useState("None");
+  const [playBtn, setPlayBtn] = useState("play");
   const [payloadids, setPayloadids] = useState<any[]>([]);
   const [displayNames, setDisplayNames] = useState<any[]>([]);
-  const [curZone, setCurZone] = useState({});
+  const [curZone, setCurZone] = useState<IfcRoonZoneApi>(initZone);
   const inVolumeSlider = false;
-  const [state, setState] = useState<StateType>({});
-  
-  //setState(previousState => {return{ ...previousState, line1: x}});
+  const [textScrollingLine1, setTextSrollingLine1] = useState(false);
+  const [textScrollingLine2, setTextSrollingLine2] = useState(false);
+  const [showPlayer, setShowPlayer] = useState(false);
+  const textLine1Ref = useRef<HTMLLIElement>(null);
+  const textLine2Ref = useRef<HTMLLIElement>(null);
 
   useEffect (() => {
-    const global_settinsZoneID = GetVal("settings_NP_zoneID");
-    g_settings.zoneID = global_settinsZoneID;
+    g_settings.zoneID = GetVal("settings_NP_zoneID");
     g_settings.displayName = GetVal("settings_NP_displayName");
     g_settings.theme = "black";
-  
+    setdisplay_name(g_settings.displayName);
 
     socket.on("pairStatus", function(payload) {
       setPairState(payload.pairEnabled);
@@ -70,54 +63,56 @@ export default function Home() {
         setPayloadids(zone_array);
         setDisplayNames(name_array);
 
-        if (zone_array.includes(global_settinsZoneID) === false) {
+        if (zone_array.includes(g_settings.zoneID) === false) {
           setZoneSelShow(true);
         }
       }
     });
   
     socket.on("zoneStatus", function(payload) {
-      if (global_settinsZoneID !== 'undefined') {
+      if (g_settings.zoneID !== 'undefined') {
+        var found = false;
         for (var x in payload) {
-          if (payload[x].zone_id == global_settinsZoneID) {
-            setCurZone(payload[x]);
+          if (payload[x].zone_id === g_settings.zoneID) {
             g_curZone = payload[x];
-            
-            if (g_state.title != payload[x].now_playing.one_line.line1) {
-              g_state.title = payload[x].now_playing.one_line.line1;
-              setState(g_state);
-            }
-
-            if (g_state.image_key != payload[x].now_playing.image_key || g_state.image_key === undefined) {
-              g_state.image_key = payload[x].now_playing.image_key;
-              setState(g_state);
-            }
-
-            if (g_state.line1 != payload[x].now_playing.three_line.line1) {
-              g_state.line1 = payload[x].now_playing.three_line.line1;
-              setState(g_state);
-            }
-            if (g_state.line2 != payload[x].now_playing.three_line.line2) {
-              g_state.line2 = payload[x].now_playing.three_line.line2;
-              setState(g_state);
-            }
-            if (g_state.line3 != payload[x].now_playing.three_line.line3) {
-              g_state.line3 = payload[x].now_playing.three_line.line3;
-              setState(g_state);
-            }
-            // Set zone button to active
-      //       $(".buttonZoneId").removeClass("buttonSettingActive");
-      //       $("#button-" + settings.zoneID).addClass("buttonSettingActive");
-  
-      //       updateZone(curZone);
-          } else {
-            setCurZone({});
-            g_curZone = {};
+            setCurZone({...payload[x]});
+            found = true;
           }
         }
+        if (!found) {
+          setZoneSelShow(true);
+        }
+      } else {
+        setCurZone(initZone);
+        g_curZone = initZone;
+        setZoneSelShow(true);
       }
+      determinePlayBtnState();
     });
-  }, []);
+
+    setShowPlayer((pairState) && (!ZoneSelShow));
+  }, [pairState, ZoneSelShow, curZone.now_playing]);
+
+  useEffect(() => {
+    if (textLine1Ref.current) {
+      if (isOverflowActive(textLine1Ref.current)) {
+        setTextSrollingLine1(true);
+      } else {
+        setTextSrollingLine1(false);
+      }
+    }
+    if (textLine2Ref.current) {
+      if (isOverflowActive(textLine2Ref.current)) {
+        setTextSrollingLine2(true);
+      } else {
+        setTextSrollingLine2(false);
+      }
+    }
+  }, [isOverflowActive]);
+
+  function isOverflowActive(event:any) {
+    return event.clientWidth > (740); 
+  }
 
 
   const ShowPairedMsg = ( props: { state: boolean; }) => {
@@ -125,8 +120,8 @@ export default function Home() {
     return(
       <>
       {!state && 
-        <div className="absolute z-[4] h-full bg-black">
-          <div className="w-[90%] text-5xl text-white text-center justify-center">
+        <div className="absolute inset-0 min-h-full min-w-full bg-black z-[7]">
+          <div className="flex w-full h-full p-20 text-5xl text-white text-center z-[7]">
             This extension is not enabled. Please use a Roon client to enable it.
           </div>
         </div>
@@ -139,16 +134,15 @@ export default function Home() {
     return(
       <>
         {ZoneSelShow && 
-            // <div className="inset-0 text-3xl text-white justify-center"> Select output: </div>
-            <div className="absolute inset-0 z-[5] h-full w-full bg-black text-4xl text-center p-4">
+            <div className="absolute inset-0 h-full w-full bg-black font-bold text-3xl text-center p-4 z-[6]">
               Select output:
-            <div className="flex grid-cols-5 justify-center w-full h-full text-white mt-16">
+            <div className="grid grid-cols-5 ml-6 gap-8 mt-10 text-white z-[6]">
             {
-            zoneIds.map((zid, idx) => ( 
-              <ul key={idx} className="mr-16">
-                <DynButton zoneId={zid} display_name={display_names[idx]}/>
-              </ul>
-            ))
+              zoneIds.map((zid, idx) => ( 
+                <ul key={idx} className="justify-self-center self-center">
+                  <DynButton zoneId={zid} display_name={display_names[idx]}/>
+                </ul>
+              ))
             }
             </div> 
           </div>
@@ -156,145 +150,227 @@ export default function Home() {
       </>
   )};
 
+  const ShowNoActivity = () => {
+    return(
+      <>
+      {(curZone.now_playing === undefined) &&
+          <div className="absolute inset-0 min-h-full min-w-full bg-black z-[5]">
+            <div className="flex w-full h-[80%] p-28 text-5xl text-white text-center z-[5]">
+              Nothing happening on "{display_name}" start some music or select another output.
+            </div>
+            <div className="flex w-full h-full justify-center z-[5]">
+                <ControlButton btn="output" onClick={() => setZoneSelShow(true)} cname="z-[5] h-16 w-16" />
+              </div>
+          </div>
+      }
+      </>
+  )};
+
   const DynButton = ( props: { zoneId: any; display_name:any }) => {
     const { zoneId, display_name } = props;
     return (
-      <div className="z-[5]">
-      <button type="button" className="h-14 py-2 px-4 font-bold border-none text-4xl bg-[#eff0f1] text-[#232629] inline-flex items-center justify-center rounded-md transition-colors focus:outline-none disabled:opacity-50 disabled:pointer-events-none data-[state=open]:bg-slate-100" onClick={() => selectZone(zoneId, display_name)}>
-        {display_name}
-      </button>
+      <div className="z-[6]">
+        <button type="button" className="z-[6] py-2 w-[200px] font-bold border-none text-4xl bg-[#eff0f1] text-[#232629] rounded-md" onClick={() => selectZone(zoneId, display_name)}>
+          {display_name}
+        </button>
       </div>
   )};
   
   function selectZone (zoneId:string, display_name:string) {
     g_settings.zoneID = zoneId;
     StoreVal("settings_NP_zoneID", zoneId);
-  
+
     g_settings.displayName = display_name;
     StoreVal("settings_NP_displayName", display_name);
-  
-    // Reset state on zone switch
-    //setState((prev) => []);
+    setdisplay_name(display_name);
+
     setZoneSelShow(false);
-    socket.emit("getZone", zoneId);  
+    socket.emit("getZone");  
   }
 
   const ShowCoverImage = () => {
-    console.log(g_curZone);
-    if (g_curZone.now_playing !== undefined &&
-      // state.image_key != curZone.now_playing.image_key ||
-      g_curZone.now_playing.image_key !== undefined) {
+    if (pairState === false) { return (<></>)};
+
+    if (curZone.now_playing !== undefined &&
+        curZone.now_playing.image_key !== undefined) {
       // state.image_key = curZone.now_playing.image_key;
   
-      // if (curZone.now_playing.image_key === undefined) {
-      //   state.image_url = "/img/transparent.png";
-      // } else {
-        g_state.image_url =
-            "/roonapi/getImage?image_key=" + g_curZone.now_playing.image_key;
+      if (curZone.now_playing.image_key === undefined) {
+        coverimage_url = "/no_image.webp";
+      } else {
+        coverimage_url =
+            "/roonapi/getImage?image_key=" + curZone.now_playing.image_key;
       }
+    }
     return (
       <>  
-      <Image src={g_state.image_url} alt={`Cover art for ${state.title}`} fill={true} sizes="(max-width: 400px)"/>
+      <Image src={coverimage_url} alt={`Cover art for ${curZone.now_playing.one_line.line1}`} fill={true} sizes="(max-width: 400px)"/>
       </>
   )};
   
+  function SendCmd(cmd:string, zone_id:string) {
+      if (cmd == "prev") {
+        socket.emit("goPrev", zone_id);
+      } else if (cmd == "next") {
+        socket.emit("goNext", zone_id);
+      } else if (cmd == "play") {
+        socket.emit("goPlay", zone_id);
+      } else if (cmd == "pause") {
+        socket.emit("goPause", zone_id);
+      } else if (cmd == "stop") {
+        socket.emit("goStop", zone_id);
+      }
+  }
+
+  function determinePlayBtnState () {
+    if (g_curZone.is_play_allowed) {
+      setPlayBtn("play");
+    }
+    else if (g_curZone.is_pause_allowed) {
+      setPlayBtn("pause");
+    } else {
+      setPlayBtn("stop");
+    }
+  }
+
+  function changePlayMode() {
+    if (curZone.is_play_allowed) {
+      SendCmd("play", curZone.zone_id);
+    } else if (curZone.is_pause_allowed) {
+      SendCmd("pause", curZone.zone_id);
+    } else {
+      SendCmd("stop", curZone.zone_id);
+    }
+  }
+
+  function sendNextCommand () {
+    if (curZone.is_next_allowed) {
+      SendCmd("next", curZone.zone_id);
+    }
+  }
+  function sendPrevCommand () {
+    if (curZone.is_previous_allowed) {
+      SendCmd("prev", curZone.zone_id);
+    }
+  }
+
+  function changeZoneSetting(zoneSetting:string, zoneSettingValue:string) {
+    var msg = {} as ZoneSettings;
+    msg.zone_id = curZone.zone_id;
+    msg.setting = zoneSetting;
+    msg.value = zoneSettingValue;
+    socket.emit("changeSetting", msg);
+  }
+
+  function auto_radio_change() {
+    if (curZone.settings.auto_radio === true) {
+      changeZoneSetting("auto_radio", "false");
+    } else {
+      changeZoneSetting("auto_radio", "true");
+    }
+  }
+  function shuffle_change() {
+    if (curZone.settings.shuffle === true) {
+      changeZoneSetting("shuffle", "false");
+    } else {
+      changeZoneSetting("shuffle", "true");
+    }
+  }
+  function loop_change() {
+    if (curZone.settings.loop === 'loop') {
+      changeZoneSetting("loop", "loop_one");
+    } else if (curZone.settings.loop === 'loop_one') {
+      changeZoneSetting("loop", "disabled");
+    } else {
+      changeZoneSetting("loop", "loop");
+    }
+  }
 
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24 bg-black text-white">
-    <div className="absolute inset-0 w-[1280px] h-[400px] border-2 border-white"></div>
-      <ShowPairedMsg state={pairState}/>
-      <ShowZoneSelector zoneIds={payloadids} display_names={displayNames} ZoneSelShow={ZoneSelShow}/>
-      <div id="isPlaying">
-     
-      <div id="containerCoverImage" className="absolute left-3 inset-0 w-[400px] h-[400px]">
-      <ShowCoverImage />
-      </div>
-      <div id="containerMusicInfo" className="absolute right-0 inset-0 ml-[420px] w-[780px] h-full">
-        <div id="line1" className="text-white font-bold h-[10%] mb-[1%]">{state.line1}</div>
-        <div id="line2" className="text-white h-[10%] mb-[1%]">{state.line2}</div>
-        <div id="line3" className="text-white h-[10%] mb-[1%]">{state.line3}</div>
-        <div id="controlsPlayer">
-          <button
-            type="button"
-            id="controlPrev"
-            className="bg-white h-10 w-1/3"
-            name="Previous"
-            aria-label="Previous"
-            onClick={() => StoreVal("settings_test_click", "false")}
-          ></button>
-          <button
-            type="button"
-            id="controlPlayPauseStop"
-            className="bg-green-500 h-10 w-1/3"
-            name="Play Pause"
-            aria-label="Play Pause"
-          ></button>
-          <button
-            type="button"
-            id="controlNext"
-            className="bg-red-600 h-10 w-1/3"
-            name="Next"
-            aria-label="Next"
-          ></button>
+      <div className="absolute inset-0 w-[1280px] h-[400px] border-2 border-white bg-black z-2"></div>
+      <ShowPairedMsg state={pairState} />
+      <ShowZoneSelector zoneIds={payloadids} display_names={displayNames} ZoneSelShow={ZoneSelShow} />
+      <ShowNoActivity />
+
+      <div id="MusicPlayerControl" className={`${showPlayer ? "z-[8]" : "z[0]"}`}>
+      {showPlayer && (curZone.now_playing !== undefined) &&
+      <>
+        {/* Cover image on the left side of the screen */}
+        <div id="CoverImage" className="absolute left-3 inset-0 w-[400px] h-[400px]">
+          <ShowCoverImage />
         </div>
-        <div id="containerTrackSeek">
-          <div id="trackSeek">
-            <div id="trackSeekValue">
-              <span id="seekPosition" className="left">&nbsp;</span>
-              <span id="seekLength" className="right">&nbsp;</span>
-            </div>
+        
+        {/* Music info on the top right side of the screen */}
+        <div id="MusicInfo" className="absolute right-0 inset-0 ml-[460px] w-[740px] h-full overflow-x-hidden">
+          <div id="line1" className="min-w-full overflow-x-hidden whitespace-nowrap">
+            <div className={`relative flex ${(textScrollingLine1) ? "" : "justify-center"}`}>
+              <ul className={`text-white font-bold text-4xl mt-12 mb-6 ${(textScrollingLine1) ? "animate-marquee" : ""}`}>
+                <li ref={textLine1Ref} value="" className={`${(textScrollingLine1) ? "mr-16" : ""}`}>
+                  {curZone.now_playing.two_line.line1}
+                </li>
+              </ul>
+              {textScrollingLine1 && 
+              <ul className={`absolute top-0 text-white font-bold text-4xl mt-12 mb-6 ${(textScrollingLine1) ? "animate-marquee2" : ""}`}>
+                <li className="mr-16">
+                  {curZone.now_playing.two_line.line1}
+                </li>
+              </ul>
+              }
+            </div> 
+          </div> 
+          <div id="line2" className="min-w-full overflow-x-hidden whitespace-nowrap">
+             <div className={`relative flex ${(textScrollingLine2) ? "" : "justify-center"}`}>
+              <ul className={`text-white text-3xl mb-4 ${(textScrollingLine2) ? "animate-marquee" : ""}`}>
+                <li ref={textLine2Ref} value="" className={`${(textScrollingLine2) ? "mr-16" : ""}`}>
+                  {curZone.now_playing.two_line.line2}
+                </li>
+              </ul>
+              {textScrollingLine2 && 
+              <ul className={`absolute top-0 text-white text-3xl mb-4 ${(textScrollingLine2) ? "animate-marquee2" : ""}`}>
+                <li className="mr-16">
+                  {curZone.now_playing.two_line.line2}
+                </li>
+              </ul>
+              }
+            </div> 
+          </div> 
+          
+          {/* Music player controls on the bottom right side of the screen */}
+          <div id="PlayerControls" className="flex w-full justify-between mt-4">
+            <ControlButton btn="prev" onClick={() => sendPrevCommand()} cname={`h-14 w-14 mt-auto mb-auto ${(curZone.is_previous_allowed) ? "" : "text-neutral-500"}`} />
+            <ControlButton btn={playBtn} onClick={() => changePlayMode()} cname="h-20 w-20 mt-auto mb-auto" />
+            <ControlButton btn="next" onClick={() => sendNextCommand()} cname={`h-14 w-14 mt-auto mb-auto ${(curZone.is_next_allowed) ? "" : "text-neutral-500"}`} />
           </div>
+          <div id="TrackSeek" className="">
+            <span id="TrackSeekContainer">
+              <progress id="TrackProgress" value={(curZone.now_playing.length === 0) ? 0 : (curZone.now_playing.seek_position / curZone.now_playing.length)} max="1" className="w-full rounded-full bg-neutral-600" />
+            </span>
+          </div>
+          <div id="controlsSettings" className="flex w-full justify-between mt-3">
+            <ControlButton btn={(curZone.settings.loop === 'disabled') ? "loop" : curZone.settings.loop} onClick={() => loop_change()} cname={`h-10 w-10 mt-auto mb-auto ${(curZone.settings.loop !== 'disabled') ? "text-green-500" : ""}`} />
+            <ControlButton btn="shuffle" onClick={() => shuffle_change()} cname={`h-10 w-10 mt-auto mb-auto ${(curZone.settings.shuffle) ? "text-green-500" : ""}`} />
+            <ControlButton btn="radio" onClick={() => auto_radio_change()} cname={`h-10 w-10 mt-auto mb-auto ${(curZone.settings.auto_radio) ? "text-green-500" : ""}`} /> 
+            <ControlButton btn="volume" onClick={undefined} cname="h-10 w-10 mt-auto mb-auto" />
+            <ControlButton btn="output" onClick={() => setZoneSelShow(true)} cname="h-10 w-10 mt-auto mb-auto" />
+          </div>
+
         </div>
-        <div id="containerZoneList">
-          <button
-            type="button"
-            className="buttonZoneName textBold buttonAvailable colorChange"
-            id="nowplayingZoneList"
-            // onClick={('#overlayZoneList').show()}
-            name="Zone List"
-            aria-label="Zone List"
-          >
-            zoneList
-          </button>
-        </div>
-         <div id="controlsSettings">
-        {/*  <button
-            type="button"
-            className="buttonFillHeight settingsButton"
-            id="buttonLoop"
-          ></button>
-          <button
-            type="button"
-            className="buttonFillHeight settingsButton"
-            id="buttonShuffle"
-          ></button>
-          <button
-            type="button"
-            className="buttonFillHeight settingsButton"
-            id="buttonRadio"
-          ></button>
-          <button
-            type="button"
-            className="buttonFillHeight settingsButton buttonAvailable"
-            id="buttonVolume"
-            onclick="$('#overlayVolume').show()"
-            name="Show Volume Controls"
-            aria-label="Show Volume Controls"
-          ></button>
-          <button
-            type="button"
-            className="buttonFillHeight settingsButton buttonAvailable"
-            id="buttonSettings"
-            onclick="$('#overlaySettings').show()"
-            name="Show Settings"
-            aria-label="Show Settings"
-          ></button> */}
-        </div>
+      </>
+      }
       </div>
-    </div>
+
+      <div id="ZoneSelect" className="absolute flex inset-0 w-full h-full justify-end z-[1]"> 
+          <div className="relative mt-64 -mr-3 z-0">
+            <span className="flex -rotate-90 text-xl text-neutral-400">
+              {display_name}
+            </span>
+          </div>
+          
+      </div>
     </main>
-  )
+  );
 }
 
 

@@ -1,11 +1,18 @@
 "use client"
 import './globals.css'
-import { Inter } from 'next/font/google'
+import { Inter, Roboto, Lora } from 'next/font/google'
 import { NavMenu } from './components/navMenu'
 import { DefaultSettings } from './components/defaultSettings'
 import { useEffect } from 'react'
 
+
 const inter = Inter({ subsets: ['latin'] })
+const lora = Lora({ subsets: ['latin'] });
+
+const roboto = Roboto({
+  weight: ['100', '300', '400', '500', '700', '900'],
+  subsets: ['latin'],
+});
 
 export const metadata = {
   title: 'JAMS',
@@ -23,7 +30,8 @@ export default function RootLayout({
   }, []);
   return (
       <html lang="en">
-        <body className={inter.className}>
+        {/* <body className={inter.className}> */}
+        <body className={roboto.className}>
           <NavMenu />
           {children}
         </body>

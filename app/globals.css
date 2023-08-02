@@ -4,3 +4,14 @@
 
 
 
+  ::-webkit-progress-value {
+    background-color: rgb(26, 181, 59);
+    background-image: linear-gradient(to left, white 4px, transparent 1px, transparent);
+  }
+  
+  ::-moz-progress-bar {
+    background-color: rgb(26, 181, 59);
+    background-image: linear-gradient(to left, white 4px, transparent 1px, transparent);
+  }
+  
+ 
