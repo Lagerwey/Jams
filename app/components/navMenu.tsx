@@ -9,18 +9,18 @@ export function NavMenu() {
 
     return (
         <header className="bg-black">
-            <div className={`absolute inset-0 w-[1280px] h-[400px] ${navmenu ? "z-[9]" : "z[0]"}`}>
-            <section className="inline-block w-full text-right z-[8] text-white text-6xl ">
+            <div className={`absolute inset-0 w-[1280px] h-[400px] ${navmenu ? "z-20" : "z[0]"}`}>
+            <section className="inline-block w-full text-right z-20 text-white text-6xl ">
                 <button type="button" title="menu button" className="h-full" onClick={() => setNavMenu(!navmenu)}>
                     {navmenu && <i className="relative z-[1] mr-4 zmdi zmdi-apps"/>}
-                    {!navmenu && <i className="relative z-10 mr-4 zmdi zmdi-apps"/>}
+                    {!navmenu && <i className="relative z-20 mr-4 zmdi zmdi-apps"/>}
                 </button>
             </section>
             
-            <section className={navmenu ? "absolute top-0 origin-top z-[9] bg-gray-900 h-full w-full animate-openmenu" : 
-                                          "absolute top-0 origin-top z-[9] bg-gray-900 h-full w-full animate-closemenu"}>
-                <button type="button" title="close button" className="w-full text-right z-[9] text-white text-6xl" onClick={() => setNavMenu(!navmenu)}>
-                    <i className="relative z-[9] mr-4 zmdi zmdi-close"></i>
+            <section className={navmenu ? "absolute top-0 origin-top z-20 bg-gray-900 h-full w-full animate-openmenu" : 
+                                          "absolute top-0 origin-top z-20 bg-gray-900 h-full w-full animate-closemenu"}>
+                <button type="button" title="close button" className="w-full text-right z-20 text-white text-6xl" onClick={() => setNavMenu(!navmenu)}>
+                    <i className="relative z-20 mr-4 zmdi zmdi-close"></i>
                 </button>
                 <nav className="navbar absolute inset-0 gap-5 mt-10 grid grid-cols-3 text-3xl text-white h-full w-full">
                     <ul className="flex relative justify-center">
