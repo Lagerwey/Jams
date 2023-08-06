@@ -1,15 +1,14 @@
 "use client"
-import { useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { GetVal, StoreVal } from "./components/LocalStorage";
 import { io } from "socket.io-client";
 import Image from "next/image";
 import ControlButton from "./components/controlButton";
 import { IfcRoonZoneApi, initZone } from "./components/IfcRoonZoneAPI";
 
-
 // Setup the websocket
 var listenPort = Number(process.env.NEXT_PUBLIC_LISTEN_PORT) + 1;
-const socket = io(`http://localhost:${listenPort}`); 
+var socket:any; 
 
 type SettingsType = {
   zoneID: string;
@@ -21,6 +20,11 @@ interface ZoneSettings {
   zone_id: string;
   setting: string;
   value: string;
+}
+
+interface ChangeVolume {
+  output_id: string;
+  volume: string;
 }
 
 var g_settings:SettingsType = {} as SettingsType;
@@ -35,12 +39,19 @@ export default function Home() {
   const [payloadids, setPayloadids] = useState<any[]>([]);
   const [displayNames, setDisplayNames] = useState<any[]>([]);
   const [curZone, setCurZone] = useState<IfcRoonZoneApi>(initZone);
-  const inVolumeSlider = false;
   const [textScrollingLine1, setTextSrollingLine1] = useState(false);
   const [textScrollingLine2, setTextSrollingLine2] = useState(false);
   const [showPlayer, setShowPlayer] = useState(false);
+  const [showVolune , setShowVolune] = useState(false);
   const textLine1Ref = useRef<HTMLLIElement>(null);
   const textLine2Ref = useRef<HTMLLIElement>(null);
+  const volumeRef = useRef<HTMLDivElement>(null);
+  const volSliderRef = useRef(null);
+  const [volume, setVolume] = useState('0');
+
+  useEffect (() => {
+    socket = io(`http://localhost:${listenPort}`);
+  }, []);
 
   useEffect (() => {
     g_settings.zoneID = GetVal("settings_NP_zoneID");
@@ -48,11 +59,11 @@ export default function Home() {
     g_settings.theme = "black";
     setdisplay_name(g_settings.displayName);
 
-    socket.on("pairStatus", function(payload) {
+    socket.on("pairStatus", function(payload:any) {
       setPairState(payload.pairEnabled);
     });
 
-    socket.on("zoneList", function(payload) {
+    socket.on("zoneList", function(payload:any) {
       var zone_array:any[] = [];
       var name_array:any[] = [];
       if (payload !== undefined) {
@@ -69,17 +80,22 @@ export default function Home() {
       }
     });
   
-    socket.on("zoneStatus", function(payload) {
+    socket.on("zoneStatus", function(payload:any) {
       if (g_settings.zoneID !== 'undefined') {
-        var found = false;
+        var zoneFound = false;
         for (var x in payload) {
           if (payload[x].zone_id === g_settings.zoneID) {
             g_curZone = payload[x];
             setCurZone({...payload[x]});
-            found = true;
+            if (g_curZone.outputs[0].volume === undefined) {
+              setVolume("fixed");
+            } else {
+              setVolume(String(g_curZone.outputs[0].volume.value));
+            }
+            zoneFound = true;
           }
         }
-        if (!found) {
+        if (!zoneFound) {
           setZoneSelShow(true);
         }
       } else {
@@ -108,7 +124,22 @@ export default function Home() {
         setTextSrollingLine2(false);
       }
     }
-  }, [isOverflowActive]);
+    
+    if (!showVolune) return;
+    const handleOutSideClick = (event:any) => {
+      if (!volumeRef.current?.contains(event.target)) {
+        setShowVolune(false);
+        console.log("Outside Clicked. ");
+      }
+    };
+
+    window.addEventListener("mousedown", handleOutSideClick);
+    // clean up
+    return () => {
+      window.removeEventListener("mousedown", handleOutSideClick);
+    };
+
+  }, [isOverflowActive, showVolune]);
 
   function isOverflowActive(event:any) {
     return event.clientWidth > (740); 
@@ -136,7 +167,7 @@ export default function Home() {
         {ZoneSelShow && 
             <div className="absolute inset-0 h-full w-full bg-black font-bold text-3xl text-center p-4 z-[6]">
               Select output:
-            <div className="grid grid-cols-5 ml-6 gap-8 mt-10 text-white z-[6]">
+            <div className="grid grid-cols-5 w-full ml-6 gap-8 mt-10 text-white z-[6] place-items-center">
             {
               zoneIds.map((zid, idx) => ( 
                 <ul key={idx} className="justify-self-center self-center">
@@ -159,12 +190,13 @@ export default function Home() {
               Nothing happening on "{display_name}" start some music or select another output.
             </div>
             <div className="flex w-full h-full justify-center z-[5]">
-                <ControlButton btn="output" onClick={() => setZoneSelShow(true)} cname="z-[5] h-16 w-16" />
-              </div>
+              <ControlButton btn="output" onClick={() => setZoneSelShow(true)} cname="z-[5] h-16 w-16" />
+            </div>
           </div>
       }
       </>
   )};
+
 
   const DynButton = ( props: { zoneId: any; display_name:any }) => {
     const { zoneId, display_name } = props;
@@ -187,6 +219,92 @@ export default function Home() {
     setZoneSelShow(false);
     socket.emit("getZone");  
   }
+
+
+  const ShowVolumeControl = () => {
+    const [volChange, setVolChange] = useState(volume);
+    const [sliderMove, setSliderMove] = useState(false);
+
+    useEffect(() => {
+      const slider = document.querySelector("input[type=range]") as HTMLInputElement;
+      const tooltip = document.getElementById("slider-value");
+      if ((tooltip) && (slider)) {
+        let thumbSize = 40;
+        let sRange = Math.abs(Number(slider.max) - Number(slider.min));
+        const ratio = (slider.offsetWidth) / sRange
+        let thumbComp = (thumbSize * 1.5) * (Number(slider.value) - Number(slider.min)) / sRange
+        let amountToMove = (thumbSize / 2) + (ratio * (Number(slider.value) - Number(slider.min))) - thumbComp
+        tooltip.style.left = amountToMove+"px"
+      }
+    }, [volChange]);
+
+    function sendVolumeValue(e: FormEvent<HTMLInputElement>) {
+      let _target = e.target as HTMLInputElement;
+      setVolume(volChange);
+      setSliderMove(false)
+      var volMsg:ChangeVolume = { output_id: curZone.outputs[0].output_id,
+                                  volume: _target.value};
+      socket.emit("changeVolume", volMsg);
+    }
+
+    return(
+      <>
+      {showVolune && 
+        <div className="absolute inset-0 h-full w-full z-10">
+          <div className="h-full w-full backdrop-blur-sm"></div>
+          <div className="absolute inset-0 grid top-0 place-items-center h-screen">
+            <div ref={volumeRef} className="grid w-[700px] h-[150px] text-4xl bg-slate-700 text-white place-items-center">
+            {(volume === "fixed") ?
+            <p className="text-3xl"> Output '{display_name}' has fixed Volume!</p> :
+            <>
+            <p className="w-full text-center text-3xl">'{display_name}' volume = {curZone.outputs[0].volume.value}{(curZone.outputs[0].volume?.type !== 'number') ? curZone.outputs[0].volume?.type : ""}</p>
+            <div id="slider-value" className={`relative w-4/5 text-2xl -mt-6 ${sliderMove ? "text-white" : "text-slate-700"}`}>
+              {volChange}
+            </div>
+            <div className="w-full text-center ">
+              <input
+                aria-label="Volume-slider"
+                type="range"
+                min={curZone.outputs[0].volume.min}
+                max={curZone.outputs[0].volume.max}
+                step={curZone.outputs[0].volume.step}
+                value={volChange}
+                onMouseUp={sendVolumeValue}
+                onMouseDown={() => setSliderMove(true)} 
+                onChange={({ target: { value: vol } }) => {setVolChange(vol);}}
+                className="w-4/5 -mt-6 cursor-pointer 
+                           appearance-none bg-transparent 
+                           [&::-webkit-slider-runnable-track]:rounded-full 
+                           [&::-webkit-slider-runnable-track]:col
+                           [&::-webkit-slider-runnable-track]:h-4 
+                         [&::-webkit-slider-runnable-track]:bg-black/50 
+                           [&::-webkit-slider-thumb]:appearance-none 
+                           [&::-webkit-slider-thumb]:h-[50px] 
+                           [&::-webkit-slider-thumb]:w-[50px] 
+                           [&::-webkit-slider-thumb]:border-none
+                         [&::-webkit-slider-thumb]:bg-blue-500
+                           [&::-moz-range-track]:rounded-full 
+                           [&::-moz-range-track]:h-4 
+                         [&::-moz-range-track]:bg-black/50 
+                         [&::-moz-range-progress]:bg-green-600
+                           [&::-moz-range-progress]:h-4
+                           [&::-moz-range-progress]:rounded-full
+                           [&::-moz-range-thumb]:appearance-none 
+                           [&::-moz-range-thumb]:h-[50px] 
+                           [&::-moz-range-thumb]:w-[50px] 
+                           [&::-moz-range-thumb]:border-none
+                         [&::-moz-range-thumb]:bg-blue-500"
+              />
+            </div>
+            </>
+            }
+            </div>
+          </div>
+        </div>
+      }
+      </>
+  )};
+
 
   const ShowCoverImage = () => {
     if (pairState === false) { return (<></>)};
@@ -293,6 +411,7 @@ export default function Home() {
       <ShowPairedMsg state={pairState} />
       <ShowZoneSelector zoneIds={payloadids} display_names={displayNames} ZoneSelShow={ZoneSelShow} />
       <ShowNoActivity />
+      <ShowVolumeControl />
 
       <div id="MusicPlayerControl" className={`${showPlayer ? "z-[8]" : "z[0]"}`}>
       {showPlayer && (curZone.now_playing !== undefined) &&
@@ -352,7 +471,7 @@ export default function Home() {
             <ControlButton btn={(curZone.settings.loop === 'disabled') ? "loop" : curZone.settings.loop} onClick={() => loop_change()} cname={`h-10 w-10 mt-auto mb-auto ${(curZone.settings.loop !== 'disabled') ? "text-green-500" : ""}`} />
             <ControlButton btn="shuffle" onClick={() => shuffle_change()} cname={`h-10 w-10 mt-auto mb-auto ${(curZone.settings.shuffle) ? "text-green-500" : ""}`} />
             <ControlButton btn="radio" onClick={() => auto_radio_change()} cname={`h-10 w-10 mt-auto mb-auto ${(curZone.settings.auto_radio) ? "text-green-500" : ""}`} /> 
-            <ControlButton btn="volume" onClick={undefined} cname="h-10 w-10 mt-auto mb-auto" />
+            <ControlButton btn="volume" onClick={() => setShowVolune(true)} cname="h-10 w-10 mt-auto mb-auto" />
             <ControlButton btn="output" onClick={() => setZoneSelShow(true)} cname="h-10 w-10 mt-auto mb-auto" />
           </div>
 
