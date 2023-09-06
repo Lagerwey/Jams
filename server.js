@@ -1,8 +1,8 @@
 
-const { createServer } = require('http')
 const { parse } = require('url')
 const next = require('next')
-const WebSocket = require("socket.io");
+const bodyParser = require('body-parser')
+const express = require('express')
 // Setup Roon
 var RoonApi = require("node-roon-api");
 var RoonApiImage = require("node-roon-api-image");
@@ -14,6 +14,7 @@ var RoonApiBrowse = require("node-roon-api-browse");
 // Setup general variables
 var EnvPort = Number(process.env.NEXT_PUBLIC_LISTEN_PORT);
 const dev = process.env.NODE_ENV !== 'production'
+
 const hostname = 'localhost'
 var core, transport;
 var pairStatus = 0;
@@ -35,23 +36,28 @@ var webSock = require("socket.io")(webSocketPort, {
     },});
 
 // when using middleware `hostname` and `port` must be provided below
-const app = next({ dev, hostname, listenPort })
-const handle = app.getRequestHandler()
+const app = next({ dev })
+const handleNextRequests = app.getRequestHandler()
 
 
 app.prepare().then(() => {
-  const server = createServer(async (req, res) => {
+  const server = express()
+
+  server.use(bodyParser.json({ limit: '5mb' }))
+
+  server.all('*', (req, res) => {
+
     try {
+      
       // Be sure to pass `true` as the second argument to `url.parse`.
       // This tells it to parse the query portion of the URL.
       const parsedUrl = parse(req.url, true)
-      const { pathname, query } = parsedUrl
-
+            
       if (parsedUrl.query.url !== undefined &&
           parsedUrl.query.url.startsWith('/roonapi/getImage')) {
         var split_str = parsedUrl.query.url.split('=');
         var image_key = split_str[1];
-        await core.services.RoonApiImage.get_image(
+        core.services.RoonApiImage.get_image(
           image_key,
           { scale: "fit", width: 1080, height: 1080, format: "image/jpeg" },
           function(cb, contentType, body) {
@@ -61,34 +67,37 @@ app.prepare().then(() => {
             res.end(body, "binary");
           }
         );
-      } else if (parsedUrl.query.url !== undefined &&
-                 parsedUrl.query.url.startsWith('/roonapi/goRefreshBrowse')) {
-        await refresh_browse(req.body.zone_id, req.body.options, function(payload) {
+      } else if (parsedUrl.href !== undefined &&
+                 parsedUrl.href.startsWith('/roonapi/goRefreshBrowse')) {
+        console.log(req.body);
+        refresh_browse(req.body.zone_id, req.body.options, function(payload) {
           res.send({ data: payload });
         });
-      } else if (parsedUrl.query.url !== undefined &&
-                 parsedUrl.query.url.startsWith('/roonapi/goLoadBrowse')) {
-        await load_browse(req.body.listoffset, function(payload) {
+      } else if (parsedUrl.href !== undefined &&
+                 parsedUrl.href.startsWith('/roonapi/goLoadBrowse')) {
+        load_browse(req.body.listoffset, function(payload) {
           res.send({ data: payload });
         });
       } else {
-        await handle(req, res, parsedUrl)
+        handleNextRequests(req, res);
       }
     } catch (err) {
-      console.error('Error occurred handling', req.url, err)
-      res.statusCode = 500
-      res.end('internal server error')
-    }
+            console.error('Error occurred handling', req.url, err)
+            res.statusCode = 500
+            res.end('internal server error')
+          }
+    
   })
 
-  server.once('error', (err) => {
-    console.error(err)
-    process.exit(1)
-  })
-  server.listen(listenPort, () => {
-    console.log(`> Ready on http://${hostname}:${listenPort}`)
+  server.listen(listenPort, (err) => {
+    if (err) {
+      throw err
+    }
+
+    console.log(`> Ready on http://localhost:${listenPort}`)
   })
 })
+
 
 
 var roon = new RoonApi({

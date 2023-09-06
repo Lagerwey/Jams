@@ -407,7 +407,7 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24 bg-black text-white">
-      <div className="absolute inset-0 w-[1280px] h-[400px] border-2 border-white bg-black z-2"></div>
+      <div className="absolute inset-0 w-[1280px] h-[400px] border-2 border-white bg-black z-[2]"></div>
       <ShowPairedMsg state={pairState} />
       <ShowZoneSelector zoneIds={payloadids} display_names={displayNames} ZoneSelShow={ZoneSelShow} />
       <ShowNoActivity />
