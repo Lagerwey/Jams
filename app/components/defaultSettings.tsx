@@ -1,9 +1,7 @@
 import { GetVal, StoreVal } from "./LocalStorage";
 
-
 export const DefaultSettings = () => {
- 
-    if (GetVal('settings_clock_ClockType') === '-1') {
+    if (GetVal('settings_clock_ClockType') === 'undefined') {
         StoreVal('settings_clock_ClockType', '0');
         StoreVal('settings_clock_ClockBgSel', 'color');
         StoreVal('settings_clock_ClockShowDate', 'false');
@@ -13,4 +11,8 @@ export const DefaultSettings = () => {
         StoreVal('settings_NP_theme', "");
     }
 
+    // return (
+    //     <data/>
+    //   )
+    
 }

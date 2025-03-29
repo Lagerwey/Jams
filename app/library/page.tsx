@@ -393,7 +393,6 @@ export default function Library() {
  
     return (
         <main className="flex min-h-screen flex-col items-center justify-between p-24 bg-black text-white">
-            <div className="absolute inset-0 w-[1280px] h-[400px] border-2 border-white bg-black z-[2]"></div>
 
             <div id="navLineTop" className="absolute top-0 left-0 right-0 h-10 flex flex-row flex-wrap justify-between items-center align-middle text-white z-[6]">
                 <div className="h-full w-full flex flex-row flex-wrap items-center align-middle justify-start text-2xl ">

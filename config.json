@@ -1,8 +1,9 @@
 {
     "roonstate": {
         "tokens": {
-            "16e9a175-38f6-4dc3-ba1b-46057235d5d9": "9b68cce9-d3d3-4441-847c-4907c85d7389"
+            "16e9a175-38f6-4dc3-ba1b-46057235d5d9": "6e4840d8-da8b-44e2-9343-26a0f9d5d8e7",
+            "cf807f47-6ba2-4183-a016-5538d78fbb9c": "05ea6036-1e13-447b-bef1-640b7b821d57"
         },
-        "paired_core_id": "16e9a175-38f6-4dc3-ba1b-46057235d5d9"
+        "paired_core_id": "cf807f47-6ba2-4183-a016-5538d78fbb9c"
     }
 }

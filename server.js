@@ -3,13 +3,16 @@ const { parse } = require('url')
 const next = require('next')
 const bodyParser = require('body-parser')
 const express = require('express')
+const fs = require('fs');
+const net = require('net');
+const { exec } = require("child_process");
+
 // Setup Roon
 var RoonApi = require("node-roon-api");
 var RoonApiImage = require("node-roon-api-image");
 var RoonApiStatus = require("node-roon-api-status");
 var RoonApiTransport = require("node-roon-api-transport");
 var RoonApiBrowse = require("node-roon-api-browse");
-
 
 // Setup general variables
 var EnvPort = Number(process.env.NEXT_PUBLIC_LISTEN_PORT);
@@ -21,6 +24,8 @@ var pairStatus = 0;
 var zoneStatus = [];
 var zoneList = [];
 var webSock;
+var ir_recv_fifo_name = "\\.\pipe\ir_fifo"
+
 
 // Read config file
 if (EnvPort) {
@@ -38,6 +43,36 @@ var webSock = require("socket.io")(webSocketPort, {
 // when using middleware `hostname` and `port` must be provided below
 const app = next({ dev })
 const handleNextRequests = app.getRequestHandler()
+
+exec("mkfifo " + ir_recv_fifo_name, function(error, stdout, stderr) {
+  console.log(" Exec: uitgevoerd!!!");
+  if (error) {
+    console.log("ERROR: foutje bedankt", error);
+    return;
+  }
+});
+
+fs.open(ir_recv_fifo_name, fs.constants.O_RD | fs.constants.O_NONBLOCK | fs.constants.O_CREAT, (err, fd) => {
+  // Handle err
+  const pipe = new net.Socket({ fd });
+  // Now `pipe` is a stream that can be used for reading from the FIFO.
+  pipe.on('data', (data) => {
+    // process data ...
+    console.log(data);
+  });
+  
+  if (err) {
+    console.error('Error occurred handling FIFO', err)
+  }
+});
+
+//const fifoPath = path.resolve(projectRoot, ir_recv_fifo_name)
+// const fifo = fs.createReadStream(ir_recv_fifo_name);
+
+// fifo.on('data', data => {
+//   console.log(data);
+//   // process data...
+// });
 
 
 app.prepare().then(() => {
@@ -94,16 +129,16 @@ app.prepare().then(() => {
       throw err
     }
 
+    
     console.log(`> Ready on http://localhost:${listenPort}`)
   })
 })
 
 
-
 var roon = new RoonApi({
   extension_id: "com.jams.control",
   display_name: "JAMS",
-  display_version: "1.0.0",
+  display_version: "1.2.0",
   publisher: "Marco Lagerwey",
   // log_level: "none",
   email: "masked",
