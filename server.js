@@ -24,7 +24,8 @@ var pairStatus = 0;
 var zoneStatus = [];
 var zoneList = [];
 var webSock;
-var ir_recv_fifo_name = "\\.\pipe\ir_fifo"
+var selected_zone_id;
+var ir_recv_fifo_name = "./ir_fifo"
 
 
 // Read config file
@@ -44,35 +45,15 @@ var webSock = require("socket.io")(webSocketPort, {
 const app = next({ dev })
 const handleNextRequests = app.getRequestHandler()
 
-exec("mkfifo " + ir_recv_fifo_name, function(error, stdout, stderr) {
-  console.log(" Exec: uitgevoerd!!!");
+exec("rm -f " + ir_recv_fifo_name + "; mkfifo " + ir_recv_fifo_name, function(error, stdout, stderr) {
   if (error) {
-    console.log("ERROR: foutje bedankt", error);
+    console.log(error);
     return;
   }
 });
 
-fs.open(ir_recv_fifo_name, fs.constants.O_RD | fs.constants.O_NONBLOCK | fs.constants.O_CREAT, (err, fd) => {
-  // Handle err
-  const pipe = new net.Socket({ fd });
-  // Now `pipe` is a stream that can be used for reading from the FIFO.
-  pipe.on('data', (data) => {
-    // process data ...
-    console.log(data);
-  });
-  
-  if (err) {
-    console.error('Error occurred handling FIFO', err)
-  }
-});
 
-//const fifoPath = path.resolve(projectRoot, ir_recv_fifo_name)
-// const fifo = fs.createReadStream(ir_recv_fifo_name);
 
-// fifo.on('data', data => {
-//   console.log(data);
-//   // process data...
-// });
 
 
 app.prepare().then(() => {
@@ -310,6 +291,48 @@ function load_browse(listoffset, callback) {
     }
   );
 }
+
+fs.open(ir_recv_fifo_name, fs.constants.O_RDWR | fs.constants.O_NONBLOCK, (err, fd) => {
+  const pipe = new net.Socket({ fd });
+  // Now `pipe` is a stream that can be used for reading from the FIFO.
+  pipe.on('data', (data) => {
+    // process data ...
+    ir_cmd = String(data).replaceAll("\n", "");
+    switch (ir_cmd) {
+      case "KEY_BLUE":
+        console.log("KEY BLUE!!!");
+        break;
+      case "KEY_PLAY":
+        transport.control(msg, "playpause");
+        break;
+      case "KEY_PREV":
+        transport.control(msg, "previous");
+        break;
+      case "KEY_NEXT":
+        transport.control(msg, "next");
+        break;
+      case "KEY_FF":
+        console.log("KEY FORWARDS!!!");
+        break;
+      case "KEY_REW":
+        console.log("KEY REWIND!!!");
+        break;
+      case "KEY_STOP":
+        transport.control(msg, "stop");
+        break;
+      default:
+        console.log("ERROR: Received an unknown IR command (" + ir_cmd + ")");
+        break;
+    }
+  });
+
+  // Handle err
+  if (err) {
+    console.error('Error occurred handling FIFO', err)
+  }
+});
+
+
 
 // // ---------------------------- WEB SOCKET --------------
 webSock.on("connection", function(socket) {

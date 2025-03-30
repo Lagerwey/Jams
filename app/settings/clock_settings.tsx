@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Color, ColorPicker, toColor, useColor } from "react-color-palette";
 import { GetVal, StoreVal } from '../components/LocalStorage';
-import { Tooltip } from "@nextui-org/react";
+import { Tooltip } from "@heroui/react";
 import "react-color-palette/lib/css/styles.css";
 
 export const ClockSettings = () => {
