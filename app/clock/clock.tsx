@@ -19,7 +19,7 @@ export default function ClockGetTime() {
   // make sure this is not called everytime the screen renders
   useEffect (() => {
     const timer = setInterval(() => {
-      setTime(new Date().toLocaleTimeString(undefined,
+      setTime(new Date().toLocaleTimeString('nl-NL',
         { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     }, 1000);
     return () => clearInterval(timer);

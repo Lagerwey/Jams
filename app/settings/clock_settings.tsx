@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Color, ColorPicker, toColor, useColor } from "react-color-palette";
 import { GetVal, StoreVal } from '../components/LocalStorage';
 import { Tooltip } from "@heroui/react";
@@ -44,9 +44,9 @@ export const ClockSettings = () => {
     <>
     <div>
       <div className='flex justify-center'>
-        <Tooltip content={"Select the clock face to use"} color="invert">
           <div className='mr-4 text-2xl text-white'>Clock type:</div>
-          <select title='clockSelector' id="clockType" name="clocktypelist" value={clockType} defaultValue={clockType} 
+          <Tooltip content={"Select the clock face to use"} color="default">
+          <select title='clockSelector' id="clockType" name="clocktypelist" value={clockType} 
                   onChange={handleClockType} className='text-white bg-slate-700 w-28 mr-14 text-2xl'>
             <option value="0">Clock 1</option>
             <option value="1">Clock 2</option>
@@ -55,15 +55,15 @@ export const ClockSettings = () => {
           </select>
         </Tooltip>
         <div className='flex ml-14'>
-        <Tooltip content={"Show Date on the clock"} color="invert">
           <div className='mr-4 text-2xl text-white'>Show date:</div>
+          <Tooltip content={"Show Date on the clock"} color="default">
           <input title='ShowDate' type="checkbox" name="showdate" checked={(clockShowDate === 'true')}
                  onChange={handleShowDate} className="mr-14 text-white h-8 w-8 checked:bg-green-600 checked:ring-green-600" />
         </Tooltip>
         </div>
-        <Tooltip content={"Select the background to use wheater or a fixed color"} color="invert">
           <div className='mr-4 text-2xl text-white'>Background:</div>
-          <select title='bgSelector' id="backgroundSel" name="bgSelList" value={clockBgSel} defaultValue={clockBgSel} 
+          <Tooltip content={"Select the background to use wheater or a fixed color"} color="default">
+          <select title='bgSelector' id="backgroundSel" name="bgSelList" value={clockBgSel}  
                   onChange={handleBgSel} className='text-white bg-slate-700 w-28 mr-14 text-2xl'>
             <option value="color">Color</option>
             <option value="weather">Weather</option>
@@ -72,9 +72,9 @@ export const ClockSettings = () => {
       </div>
       {(clockBgSel === "color") &&
         <div className='flex justify-center mt-10'>
-        <Tooltip content={"Select the background color to use"} color="invert">
           <div className='mr-4 text-2xl text-white'>Background color:</div>
           {/* <input type="color" onChange={handleBgColor}/> */}
+          <Tooltip content={"Select the background color to use"} color="default">
           <ColorPicker width={500} height={80} color={bgColorState}
                    onChange={handleBgColor} hideHSV hideHEX hideRGB dark />
         </Tooltip>

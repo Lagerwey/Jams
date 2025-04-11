@@ -1,10 +1,7 @@
 import './globals.css'
-import { Inter, Roboto, Lora } from 'next/font/google'
+import { Roboto } from 'next/font/google'
 import { NavMenu } from './components/navMenu'
-
-
-const inter = Inter({ subsets: ['latin'] })
-const lora = Lora({ subsets: ['latin'] });
+import Script from 'next/script'
 
 const roboto = Roboto({
   weight: ['100', '300', '400', '500', '700', '900'],
@@ -24,6 +21,10 @@ export default function RootLayout({
   }) {
   return (
       <html lang="en">
+        {/*<head>
+          <Script src="http://localhost:8097" strategy="beforeInteractive"/>
+        </head>*/}
+    
         {/* <body className={inter.className}> */}
         <body className={roboto.className}>
           <NavMenu />

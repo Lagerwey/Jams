@@ -426,13 +426,13 @@ export default function Home() {
         <div id="MusicInfo" className="absolute right-0 inset-0 ml-[460px] w-[740px] h-full overflow-x-hidden">
           <div id="line1" className="min-w-full overflow-x-hidden whitespace-nowrap">
             <div className={`relative flex ${(textScrollingLine1) ? "" : "justify-center"}`}>
-              <ul className={`text-white font-bold text-4xl mt-12 mb-6 ${(textScrollingLine1) ? "animate-marquee" : ""}`}>
+              <ul className={`text-white font-bold text-5xl mt-12 mb-6 ${(textScrollingLine1) ? "animate-marquee" : ""}`}>
                 <li ref={textLine1Ref} value="" className={`${(textScrollingLine1) ? "mr-16" : ""}`}>
                   {curZone.now_playing.two_line.line1}
                 </li>
               </ul>
               {textScrollingLine1 && 
-              <ul className={`absolute top-0 text-white font-bold text-4xl mt-12 mb-6 ${(textScrollingLine1) ? "animate-marquee2" : ""}`}>
+              <ul className={`absolute top-0 text-white font-bold text-5xl mt-12 mb-6 ${(textScrollingLine1) ? "animate-marquee2" : ""}`}>
                 <li className="mr-16">
                   {curZone.now_playing.two_line.line1}
                 </li>

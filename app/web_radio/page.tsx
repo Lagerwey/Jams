@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import ReactHowler from 'react-howler';
 
-const proxy = 'http://localhost:8010/proxy/';
+const proxy = 'https://api.radioparadise.com/';
 const rpApiBaseUrl = 'api/get_block?bitrate=4&info=true';
 const slideshowUrl = 'https://img.radioparadise.com/slideshow/720/{}.jpg';
 
@@ -89,15 +89,26 @@ export default function WebRadio() {
 
   async function get_RP_Data(RpUrl:any) {
     rx_data = {};
-    const res = await fetch(proxy + RpUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store'
-    });
-    rx_data = await res.json();
-    setFirstTimeLoad(false);
+    try {
+      const res = await fetch(proxy + RpUrl, {
+        method: 'GET',
+        
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+      });
+
+      if (!res.ok) {
+        throw new Error(`Response status: ${res.status}`);
+      }
+
+      rx_data = await res.json();
+      console.log(rx_data);
+      setFirstTimeLoad(false);
+    } catch (err) {
+      console.error('Error occurred handling', proxy + RpUrl, err)
+    }
     return;
   }
 
@@ -145,10 +156,14 @@ export default function WebRadio() {
   }
 
   function trackTime() {
-    if ((howlerRef === null) || (playMode !== 'play')) {
+    if ((howlerRef === null) || (playMode !== 'play') || (showData.song === undefined)) {
       return;
     }
     var curAbsTime = (howlerRef.current as any).howler.seek();
+    if (curAbsTime < showData.song[sIndex].elapsed/1000) {
+      (howlerRef.current as any).howler.seek(showData.song[sIndex].elapsed/1000);
+      curAbsTime = showData.song[sIndex].elapsed/1000;
+    }
     detTrackIndex(curAbsTime);
     var currentTrackTime = curAbsTime - (showData.song[sIndex].elapsed/1000);
     setSongTime(formatTime(currentTrackTime));
@@ -169,6 +184,11 @@ export default function WebRadio() {
   }
 
   function detTrackIndex (time:any) {
+    if (showData.song === undefined) {
+      setSongIndex(0);
+      sIndex = 0;
+      return;
+    }
     for (var i = 0; i < nofSongs; i++) {
       if (Math.floor(time) < Math.floor((showData.song[i].elapsed + showData.song[i].duration)/1000)) {
         if (i !== sIndex) {
@@ -193,7 +213,7 @@ export default function WebRadio() {
 
     return (
         <main className="flex flex-col items-center justify-between bg-black min-h-screen text-white w-full h-full z-0">
-          <div className="absolute inset-0 w-[1280px] h-[400px] border-2 border-white z-[2]"></div>
+          {/*<div className="absolute inset-0 w-[1280px] h-[400px] border-2 border-white z-[2]"></div>*/}
 
           {/* <!-- Cover --> */}
           <div id="cover" className="absolute left-3 inset-0 w-[400px] h-[400px] z-[3]">
@@ -209,10 +229,10 @@ export default function WebRadio() {
             
 
             {/* <!-- Top Info --> */}
-            <div id="title" className="relative w-full h-[70%] leading-8  text-center text-4xl opacity-90 font-light text-white z-[6]">
-              <div id="track" className="relative w-full mt-10 leading-8 h-[48px] text-center text-4xl opacity-90 font-bold text-white">{(showData.song !== undefined) ? showData.song[songIndex].artist + " - " + showData.song[songIndex].title : "Track"}</div>
-              <div id="album" className="relative w-full mt-4 leading-9 h-[34px] text-center text-3xl opacity-90 font-bold text-white">{(showData.song !== undefined) ? showData.song[songIndex].album + ' (' + showData.song[songIndex].year + ')' : "---"}</div>
-              <div id="timer" className="relative w-full mt-4 text-3xl opacity-60 font-light text-white">{songTime + ' (' + ((showData.song !== undefined) ? formatTime(showData.song[songIndex].duration/1000) : "--:--") + ')'}</div>
+            <div id="title" className="relative w-full h-[70%] leading-8  text-center text-4xl opacity-90 font-light text-white overflow-x-hidden whitespace-nowrap z-[6]">
+              <div id="track" className="relative w-full mt-10 leading-8 h-[48px] text-center text-5xl opacity-90 font-bold text-white">{(showData.song !== undefined) ? showData.song[songIndex].artist + " - " + showData.song[songIndex].title : "Track"}</div>
+              <div id="album" className="relative w-full mt-4 leading-9 h-[34px] text-center text-4xl opacity-90 font-bold text-white">{(showData.song !== undefined) ? showData.song[songIndex].album + ' (' + showData.song[songIndex].year + ')' : "---"}</div>
+              <div id="timer" className="relative w-full mt-4 text-4xl opacity-60 font-light text-white">{songTime + ' (' + ((showData.song !== undefined) ? formatTime(showData.song[songIndex].duration/1000) : "--:--") + ')'}</div>
               {/* <!-- <div id="duration">0:00</div> --> */}
             </div>
 
@@ -248,7 +268,7 @@ export default function WebRadio() {
             {/* <!-- Playlist --> */}
             {showPlayList &&
             <div id="playlist" className="absolute w-full h-full inset-0 top-0 left-0 overflow-auto bg-black  text-[#eff0f1] z-[7]">
-              <button id="close" type="button" className="zmdi zmdi-close zmdi-hc-3x absolute h-[48px] w-[48px] top-0 left-0 " onClick={() => setShowPlayList(false)}></button>
+              <button id="close" type="button" className="zmdi zmdi-close zmdi-hc-3x absolute h-[48px] w-[48px] top-0 left-0 z-[10]" onClick={() => setShowPlayList(false)}></button>
               <div id="list" className="relative w-full top-1/2 -translate-y-1/2 text-3xl">
                 {playList.map((item, idx:number) => (
                   <ul key={idx} className="w-full text-center mb-4">
@@ -279,11 +299,11 @@ export default function WebRadio() {
                   <img src="./rp-logo.png" height="100" width="100" alt="No Image" className="relative w-[100px] h-[100px]" />
                 </a>
               </div>
-              <div id="logo" className="absolute h-full w-full">
+              {/*<div id="logo" className="absolute h-full w-full">
                 <a target="_blank" href="https://www.radioparadise.com/rp2s-content.php?name=Support&file=support" className="absolute bottom-[26%] right-[1%]">
                   <img src="./button_donate.png" width="90" alt="No Image" className="relative w-[90px]" />
                 </a>
-              </div>
+              </div>*/}
               <div id="flac" className="absolute h-full w-full ">
                 <a target="_blank" href="https://www.radioparadise.com/" className="absolute bottom-[1%] left-[1%] bg-slate-950 opacity-50">
                   <img src="./flac_logo_transparent.png" alt="No Image" className="relative h-[80px] w-[100px] " />

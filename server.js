@@ -292,45 +292,45 @@ function load_browse(listoffset, callback) {
   );
 }
 
-fs.open(ir_recv_fifo_name, fs.constants.O_RDWR | fs.constants.O_NONBLOCK, (err, fd) => {
-  const pipe = new net.Socket({ fd });
-  // Now `pipe` is a stream that can be used for reading from the FIFO.
-  pipe.on('data', (data) => {
-    // process data ...
-    ir_cmd = String(data).replaceAll("\n", "");
-    switch (ir_cmd) {
-      case "KEY_BLUE":
-        console.log("KEY BLUE!!!");
-        break;
-      case "KEY_PLAY":
-        transport.control(msg, "playpause");
-        break;
-      case "KEY_PREV":
-        transport.control(msg, "previous");
-        break;
-      case "KEY_NEXT":
-        transport.control(msg, "next");
-        break;
-      case "KEY_FF":
-        console.log("KEY FORWARDS!!!");
-        break;
-      case "KEY_REW":
-        console.log("KEY REWIND!!!");
-        break;
-      case "KEY_STOP":
-        transport.control(msg, "stop");
-        break;
-      default:
-        console.log("ERROR: Received an unknown IR command (" + ir_cmd + ")");
-        break;
-    }
-  });
+// fs.open(ir_recv_fifo_name, fs.constants.O_RDWR | fs.constants.O_NONBLOCK, (err, fd) => {
+//   const pipe = new net.Socket({ fd });
+//   // Now `pipe` is a stream that can be used for reading from the FIFO.
+//   pipe.on('data', (data) => {
+//     // process data ...
+//     ir_cmd = String(data).replaceAll("\n", "");
+//     switch (ir_cmd) {
+//       case "KEY_BLUE":
+//         console.log("KEY BLUE!!!");
+//         break;
+//       case "KEY_PLAY":
+//         transport.control(msg, "playpause");
+//         break;
+//       case "KEY_PREV":
+//         transport.control(msg, "previous");
+//         break;
+//       case "KEY_NEXT":
+//         transport.control(msg, "next");
+//         break;
+//       case "KEY_FF":
+//         console.log("KEY FORWARDS!!!");
+//         break;
+//       case "KEY_REW":
+//         console.log("KEY REWIND!!!");
+//         break;
+//       case "KEY_STOP":
+//         transport.control(msg, "stop");
+//         break;
+//       default:
+//         console.log("ERROR: Received an unknown IR command (" + ir_cmd + ")");
+//         break;
+//     }
+//   });
 
-  // Handle err
-  if (err) {
-    console.error('Error occurred handling FIFO', err)
-  }
-});
+//   // Handle err
+//   if (err) {
+//     console.error('Error occurred handling FIFO', err)
+//   }
+// });
 
 
 
