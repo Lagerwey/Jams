@@ -59,7 +59,7 @@ export const ClockSettings = () => {
           <Tooltip content={"Show Date on the clock"} color="default">
           <input title='ShowDate' type="checkbox" name="showdate" checked={(clockShowDate === 'true')}
                  onChange={handleShowDate} className="mr-14 text-white h-8 w-8 checked:bg-green-600 checked:ring-green-600" />
-        </Tooltip>
+          </Tooltip>
         </div>
           <div className='mr-4 text-2xl text-white'>Background:</div>
           <Tooltip content={"Select the background to use wheater or a fixed color"} color="default">
@@ -68,7 +68,7 @@ export const ClockSettings = () => {
             <option value="color">Color</option>
             <option value="weather">Weather</option>
           </select>
-        </Tooltip>
+          </Tooltip>
       </div>
       {(clockBgSel === "color") &&
         <div className='flex justify-center mt-10'>
