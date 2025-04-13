@@ -45,7 +45,7 @@ export const Weather = () => {
       <div className="absolute z-[1] inset-0">
         <Image
             src={img[weatherType]}
-            alt="background image"
+            alt={img['Alt']}
             fill
           />
           <div className='absolute opacity-30 z-[2] inset-0 bg-black'/>
@@ -79,5 +79,6 @@ var img : imageType = {
   "Squall" : "/thunder2.jpg",   
   "Tornado" : "/thunder2.jpg",  
   "Clear" : "/sun1.jpg",  
-  "Clouds" : "/clouds3.jpg"   
+  "Clouds" : "/clouds3.jpg",
+  "Alt" : "/no_image.jpg"   
 }

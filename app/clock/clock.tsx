@@ -10,7 +10,7 @@ interface imageType {  // typing for the "image" object
 
 export default function ClockGetTime() {
   const [time, setTime] = useState(new Date().toLocaleTimeString());
-  const [clockType, setClockType] = useState('');
+  const [clockType, setClockType] = useState('0');
   
   useEffect (() => {
       setClockType(GetVal('settings_clock_ClockType'));
@@ -95,7 +95,7 @@ function stringToImage(s: string, clockType: string) {
 }
   
  
-//all image URLs are put into this array. feel free to change URLs
+//all image URLs are put into this array.
 var img : imageType = {
   "01": "/1.bmp",
   "02": "/2.bmp",
