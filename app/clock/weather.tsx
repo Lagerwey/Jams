@@ -11,7 +11,7 @@ interface imageType {  // typing for the "image" object
 export const Weather = () => {
     const [city, setCity] = useState("Deventer");
     const [weather, setWeather] = useState({});
-    const [weatherType, setWeatherType] = useState("clear");
+    const [weatherType, setWeatherType] = useState("Clear");
     const [temperature, setTemperature] = useState("0.0");
     const [clockBgSel, setClockBgSel] = useState('color');
     const [clockBgColor, setClockBgColor] = useState("#000000");
@@ -44,7 +44,8 @@ export const Weather = () => {
     { (clockBgSel === 'weather') &&
       <div className="absolute z-[1] inset-0">
         <Image
-            src={img[weatherType]}
+            suppressHydrationWarning={true}
+            src={(weatherType === "") ? img["Alt"] : img[weatherType]}
             alt={img['Alt']}
             fill
           />

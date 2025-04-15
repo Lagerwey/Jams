@@ -9,7 +9,7 @@ interface imageType {  // typing for the "image" object
 
 
 export default function ClockGetTime() {
-  const [time, setTime] = useState(new Date().toLocaleTimeString());
+  const [time, setTime] = useState(new Date().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
   const [clockType, setClockType] = useState('0');
   
   useEffect (() => {
@@ -28,7 +28,7 @@ export default function ClockGetTime() {
   return (
       //this converts string to a set of HTML img tags containing images
       stringToImage(time, clockType)
-  )
+  );
 }
 
 export function ClockGetDate() {
@@ -55,43 +55,43 @@ export function ClockGetDate() {
         {date}
       </p>}
       </>
-  )
+  );
 }
 
  
-//This afunction takes each letter of an array and pairs it to an image of the img array 
+//This function takes each letter of an array and pairs it to an image of the img array 
 function stringToImage(s: string, clockType: string) {
     const textClock = (clockType == '3') ? true : false;
     return (
       <>
-      {textClock && <p className="absolute z-[3] font-mono text-9xl text-white" >
+      {textClock && <p suppressHydrationWarning={true} className="absolute z-[3] font-mono text-9xl text-white" >
                       {s}
                     </p>
       }
       {!textClock &&
         <div className="flex z-[3]">
         <div className="relative w-24 h-40 mr-2">
-          <Image alt='not found' src={img[clockType + s[0]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
+          <Image suppressHydrationWarning={true} alt={img["00"]} src={img[clockType + s[0]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
         </div>
         <div className="relative w-24 h-40 mr-2">
-          <Image alt='not found' src={img[clockType + s[1]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
+          <Image suppressHydrationWarning={true} alt={img["00"]} src={img[clockType + s[1]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
         </div>
         <div className="relative w-24 h-40 ml-4 mr-2">
-          <Image alt='not found' src={img[clockType + s[3]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
+          <Image suppressHydrationWarning={true} alt={img["00"]} src={img[clockType + s[3]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
         </div>
         <div className="relative w-24 h-40 mr-2">
-          <Image alt='not found' src={img[clockType + s[4]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
+          <Image suppressHydrationWarning={true} alt={img["00"]} src={img[clockType + s[4]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
         </div>
         <div className="relative w-24 h-40 ml-4 mr-2">
-          <Image alt='not found' src={img[clockType + s[6]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
+          <Image suppressHydrationWarning={true} alt={img["00"]} src={img[clockType + s[6]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
         </div>
         <div className="relative w-24 h-40 mr-2">
-          <Image alt='not found' src={img[clockType + s[7]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
+          <Image suppressHydrationWarning={true} alt={img["00"]} src={img[clockType + s[7]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
         </div>
       </div>
       }
       </>
-    )
+    );
 }
   
  
