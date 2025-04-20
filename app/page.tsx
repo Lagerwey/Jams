@@ -131,7 +131,6 @@ export default function Home() {
     const handleOutSideClick = (event:any) => {
       if (!volumeRef.current?.contains(event.target)) {
         setShowVolune(false);
-        console.log("Outside Clicked. ");
       }
     };
 

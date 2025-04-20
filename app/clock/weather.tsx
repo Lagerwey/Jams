@@ -46,7 +46,7 @@ export const Weather = () => {
         <Image
             suppressHydrationWarning={true}
             src={(weatherType === "") ? img["Alt"] : img[weatherType]}
-            alt={img['Alt']}
+            alt="WeaterBackground"
             fill
           />
           <div className='absolute opacity-30 z-[2] inset-0 bg-black'/>

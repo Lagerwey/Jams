@@ -71,22 +71,22 @@ function stringToImage(s: string, clockType: string) {
       {!textClock &&
         <div className="flex z-[3]">
         <div className="relative w-24 h-40 mr-2">
-          <Image suppressHydrationWarning={true} alt={img["00"]} src={img[clockType + s[0]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
+          <Image suppressHydrationWarning={true} alt="TimeDigit1" src={img[clockType + s[0]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
         </div>
         <div className="relative w-24 h-40 mr-2">
-          <Image suppressHydrationWarning={true} alt={img["00"]} src={img[clockType + s[1]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
+          <Image suppressHydrationWarning={true} alt="TimeDigit2" src={img[clockType + s[1]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
         </div>
         <div className="relative w-24 h-40 ml-4 mr-2">
-          <Image suppressHydrationWarning={true} alt={img["00"]} src={img[clockType + s[3]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
+          <Image suppressHydrationWarning={true} alt="TimeDigit3" src={img[clockType + s[3]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
         </div>
         <div className="relative w-24 h-40 mr-2">
-          <Image suppressHydrationWarning={true} alt={img["00"]} src={img[clockType + s[4]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
+          <Image suppressHydrationWarning={true} alt="TimeDigit4" src={img[clockType + s[4]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
         </div>
         <div className="relative w-24 h-40 ml-4 mr-2">
-          <Image suppressHydrationWarning={true} alt={img["00"]} src={img[clockType + s[6]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
+          <Image suppressHydrationWarning={true} alt="TimeDigit5" src={img[clockType + s[6]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
         </div>
         <div className="relative w-24 h-40 mr-2">
-          <Image suppressHydrationWarning={true} alt={img["00"]} src={img[clockType + s[7]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
+          <Image suppressHydrationWarning={true} alt="TimeDigit6" src={img[clockType + s[7]]} fill={true} sizes="(max-width: 50px) 100vw, (max-width: 96px) 100vh, 100vw" />
         </div>
       </div>
       }

@@ -9,6 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
+    "@fortawesome/free-brands-svg-icons": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
+    "@fortawesome/react-fontawesome": "^0.2.2",
     "@heroui/react": "^2.7.0",
     "@next/font": "^13.4.12",
     "@radix-ui/react-progress": "^1.0.3",
@@ -40,6 +44,7 @@
     "react": "^18.3.1",
     "react-color-palette": "^6.2.0",
     "react-dom": "^18.3.1",
+    "react-gauge-component": "^1.2.64",
     "react-howler": "^5.2.0",
     "react-range": "^1.8.14",
     "react-simple-keyboard": "^3.6.51",
