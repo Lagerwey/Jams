@@ -26,7 +26,7 @@ var zoneList = [];
 var webSock;
 var selected_zone_id;
 var ir_recv_fifo_name = "./ir_fifo"
-
+var vu_meter_fifo_name = "/tmp/myfifo"
 
 // Read config file
 if (EnvPort) {
@@ -35,11 +35,17 @@ if (EnvPort) {
   var listenPort = 3000;
 }
 var webSocketPort = listenPort + 1;
+var ws_port_vu = listenPort + 2;
 
 var webSock = require("socket.io")(webSocketPort, {
     cors: {
-      origin: [`http://${hostname}:${listenPort}`],
+      origin: [`http://${hostname}:${webSocketPort}`],
     },});
+
+var webSockVU = require("socket.io")(ws_port_vu, {
+  cors: {
+    origin: [`http://${hostname}:${ws_port_vu}`],
+  },});
 
 // when using middleware `hostname` and `port` must be provided below
 const app = next({ dev })
@@ -53,6 +59,33 @@ exec("rm -f " + ir_recv_fifo_name + "; mkfifo " + ir_recv_fifo_name, function(er
 });
 
 
+webSockVU.on("connection", function(socket) {
+
+  fs.open(vu_meter_fifo_name, fs.constants.O_RDWR | fs.constants.O_NONBLOCK, (err, fd) => {
+    const pipe = new net.Socket({ fd });
+    // Now `pipe` is a stream that can be used for reading from the FIFO.
+    pipe.on('data', (data) => {
+      // process data ...
+        var uint16Arr = convert(data);
+        webSockVU.emit("vu_data", uint16Arr);
+    });
+
+    // Handle err
+    if (err) {
+      console.error('Error occurred handling FIFO', err)
+    }
+  });
+
+  function convert(byteArray) {
+    var value = [];
+    for (var i = 0, k = 0; i < byteArray.length; i += 2, k++) {
+        value[k] = ( byteArray[i+1] * 256) + byteArray[i];
+    }
+
+    return value;
+  };
+
+});
 
 
 
@@ -386,7 +419,6 @@ webSock.on("connection", function(socket) {
     transport.control(msg, "stop");
   });
 });
-
 
 
 

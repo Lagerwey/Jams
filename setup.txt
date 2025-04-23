@@ -1,0 +1,18 @@
+
+
+
+alsa sound (vu meters)
+-    sudo modprobe snd-aloop  (to make it permanent: sudo echo 'snd-aloop' >> /etc/modules)
+
+- git clone https://github.com/project-owner/peppyalsa.git
+- sudo apt-get install build-essential autoconf automake libtool libasound2-dev libfftw3-dev
+- cd peppyalsa
+- aclocal && libtoolize
+- autoconf && automake --add-missing
+- ./configure && make
+- sudo make install
+- cp alsa-config/asound.conf ~/.asoundrc
+- edit .asoundrc set fifo's to /tmp (ramfs)
+- alsaloop -A 2 -C hw:Loopback,0,0 -P "peppyalsa" -l 2000
+
+

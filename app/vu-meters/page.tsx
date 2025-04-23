@@ -3,8 +3,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 const GaugeComponent = dynamic(() => import('react-gauge-component'), { ssr: false });
-
-var sIndex:number = 1;
+import { io } from "socket.io-client";
 
 
 interface imageType {  // typing for the "image" object
@@ -17,7 +16,7 @@ interface vuMeterConfig {
     readonly pointerLen: number;
     readonly pointerColor: string;
     readonly pointerWidth: number;
-    readonly pointerBase: boolean;
+    readonly windowsHeigt: number;    
 }
 
 var img : imageType = {
@@ -29,18 +28,25 @@ var img : imageType = {
   }
 
 var vu_config : vuMeterConfig[] = [
-    {minAngle: -45, maxAngle: 45, pointerLen: 200, pointerColor: "white", pointerWidth: 8, pointerBase: true},
-    {minAngle: -35, maxAngle: 35, pointerLen: 200, pointerColor: "white", pointerWidth: 8, pointerBase: true},
-    {minAngle: -40, maxAngle: 40, pointerLen: 200, pointerColor: "white", pointerWidth: 8, pointerBase: true},
-    {minAngle: -25, maxAngle: 30, pointerLen: 200, pointerColor: "white", pointerWidth: 8, pointerBase: true},
-    {minAngle: -40, maxAngle: 40, pointerLen: 200, pointerColor: "white", pointerWidth: 8, pointerBase: true}
+    {minAngle: -44, maxAngle: 44, pointerLen: 180, pointerColor: "blue", pointerWidth: 8, windowsHeigt: 200},
+    {minAngle: -37, maxAngle: 37, pointerLen: 170, pointerColor: "red", pointerWidth: 8, windowsHeigt: 250},
+    {minAngle: -41, maxAngle: 41, pointerLen: 200, pointerColor: "purple", pointerWidth: 8, windowsHeigt: 250},
+    {minAngle: -30, maxAngle: 33, pointerLen: 180, pointerColor: "white", pointerWidth: 8, windowsHeigt: 245},
+    {minAngle: -33, maxAngle: 33, pointerLen: 230, pointerColor: "white", pointerWidth: 6, windowsHeigt: 230}
 ]
   
-const MAX_NOF_IMAGES = 5
-const MIN_VU_INTPUT =  0
-const MAX_VU_INPUT =  32767
-var VU_DECAY_SPEED = 8;
+const MAX_NOF_IMAGES = 5;
+const MIN_VU_INTPUT =  0;
+const MAX_VU_INPUT =  100;
+const POINTER_Y_ORIGIN = 280;
+const POINTER_X_CENTER = 200;
+const VU_DECAY_SPEED = 8;
 
+var sIndex:number = 1;
+var listenPort = Number(process.env.NEXT_PUBLIC_LISTEN_PORT) + 2; // Setup the websocket
+var socket:any; 
+var prev_vu_l_val = vu_config[sIndex-1].minAngle;
+var prev_vu_r_val = vu_config[sIndex-1].minAngle;
 
 
 export default function Vu_meters() {
@@ -49,40 +55,46 @@ export default function Vu_meters() {
     const [vuRightAngle, setvuRightAngle] = useState(vu_config[sIndex-1].minAngle);
     
     useEffect (() => {
+        socket = io(`http://localhost:${listenPort}`);
+      }, []);
+
+    useEffect (() => {
         const timer = setInterval(() => {
-            if (vuLeftAngle > vu_config[sIndex-1].minAngle) {setvuLeftAngle(vuLeftAngle - VU_DECAY_SPEED)};
-            if (vuRightAngle > vu_config[sIndex-1].minAngle) {setvuRightAngle(vuRightAngle - VU_DECAY_SPEED)};
+            setvuLeftAngle(prev_vu_l_val);
+            setvuRightAngle(prev_vu_r_val);
+            if (prev_vu_l_val > vu_config[sIndex-1].minAngle) {prev_vu_l_val -= VU_DECAY_SPEED};
+            if (prev_vu_r_val > vu_config[sIndex-1].minAngle) {prev_vu_r_val -= VU_DECAY_SPEED};
         }, 50);
+
+        socket.on("vu_data", function(payload:any) {
+            animate_vu("left", payload[0]);
+            animate_vu("right", payload[1]);
+        });
+    
         return () => clearInterval(timer);
-      }, [vuLeftAngle, vuRightAngle, sIndex, VU_DECAY_SPEED]);
+      }, [sIndex, vu_config, prev_vu_l_val, prev_vu_r_val]);
       
-    function maxMeter() {
-        animate_vu("left", 32766);
-        animate_vu("right", 32766);
-        VU_DECAY_SPEED = 0;
-    }
-    function minMeter() {
-        VU_DECAY_SPEED = 8;
-    }
 
     function previousMeter() {
-        sIndex -= 1;
-        if (sIndex < 1) {
+        if (sIndex == 1) {
             sIndex = MAX_NOF_IMAGES;
+        } else {
+            sIndex -= 1;
         }
         setImgIndex(sIndex);
-        animate_vu("left", 15350);
-        animate_vu("right", 15350);
+        animate_vu("left", 50);
+        animate_vu("right", 50);
     }
     
     function nextMeter() {
-        sIndex += 1;
-        if (sIndex > MAX_NOF_IMAGES) {
+        if (sIndex == MAX_NOF_IMAGES) {
             sIndex = 1;
+        } else {
+            sIndex += 1;
         }
         setImgIndex(sIndex);
-        animate_vu("left", 15000);
-        animate_vu("right", 15000);
+        animate_vu("left", 50);
+        animate_vu("right", 50);
       }
 
       function animate_vu(side:string, val:number) {
@@ -93,13 +105,15 @@ export default function Vu_meters() {
         var scaled = scale(val, MIN_VU_INTPUT, MAX_VU_INPUT, vu_config[sIndex-1].minAngle, vu_config[sIndex-1].maxAngle);
 
         if (side === "left") {
-            setvuLeftAngle(scaled);
+            if (scaled > prev_vu_l_val)
+                prev_vu_l_val = scaled;
         }
         else if (side === "right") {
-            setvuRightAngle(scaled);
+            if (scaled > prev_vu_r_val)
+                prev_vu_r_val = scaled;
         }
         else {
-            console.log("ERROR: animate_vu with wrong side argument (" + side + ")!!!");
+            console.log("ERROR: animate_vu with wrong side (R/L) argument (" + side + ")!!!");
         }
       }
 
@@ -131,17 +145,22 @@ export default function Vu_meters() {
                         <span className="col-[1] row-[1] mt-10">
                             <Image src={img[imgIndex.toString()]} alt="VU-L" width={400} height={300}/>
                         </span>
-                        <span className="col-[1] row-[1] mt-10 z-10" onClick={minMeter}>
-                        <svg height="300" width="400" xmlns="http://www.w3.org/2000/svg">
+                        <span className="col-[1] row-[1] mt-10 z-10">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="400" height={`${vu_config[imgIndex-1].windowsHeigt.toString()}`}>
                                 <defs>
                                     <filter id="f1">
-                                    <feDropShadow dx="3" dy="10" stdDeviation="1" floodOpacity="0.7"/>
+                                    <feDropShadow dx="5" dy="-5" stdDeviation="1" floodOpacity="0.7" floodColor="lightgrey"/>
                                     </filter>
                                 </defs>
-                                <rect width={`${vu_config[imgIndex-1].pointerWidth.toString()}`} height={`${vu_config[imgIndex-1].pointerLen.toString()}`} 
-                                      x="196" y="80" rx="5" ry="5" fill={`${vu_config[imgIndex-1].pointerColor}`} filter="url(#f1)" 
-                                      transform={`rotate(${vuLeftAngle.toString()}, 200, 280)`}/>
-                                <circle r="15" cx="200" cy="280" fill="#000000" stroke="#F00F0F" strokeWidth="3" filter="url(#f1)"/>
+                                <rect width={`${vu_config[imgIndex-1].pointerWidth.toString()}`} 
+                                      height={`${vu_config[imgIndex-1].pointerLen.toString()}`} 
+                                      x={`${POINTER_X_CENTER - (vu_config[imgIndex-1].pointerWidth / 2)}`.toString()}
+                                      y={`${POINTER_Y_ORIGIN - vu_config[imgIndex-1].pointerLen}`.toString()} 
+                                      rx="5" ry="5" 
+                                      fill={`${vu_config[imgIndex-1].pointerColor}`} 
+                                      filter="url(#f1)"
+                                      transform={`rotate(${vuLeftAngle.toString()}, ${POINTER_X_CENTER}, ${POINTER_Y_ORIGIN})`}
+                                    />
                             </svg>
                         </span>
                     </li>
@@ -149,17 +168,22 @@ export default function Vu_meters() {
                         <span className="col-[1] row-[1] mt-10">
                             <Image src={img[imgIndex.toString()]} alt="VU-R" width={400} height={300}/>
                         </span>
-                        <span className="col-[1] row-[1] mt-10 z-10" onClick={maxMeter}>
-                            <svg height="300" width="400" xmlns="http://www.w3.org/2000/svg">
+                        <span className="col-[1] row-[1] mt-10 z-10">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="400" height={`${vu_config[imgIndex-1].windowsHeigt.toString()}`}>
                                 <defs>
-                                    <filter id="f1">
-                                    <feDropShadow dx="3" dy="8" stdDeviation="1" floodOpacity="0.7"/>
+                                    <filter id="f2">
+                                    <feDropShadow dx="5" dy="-5" stdDeviation="1" floodOpacity="0.7" floodColor="lightgrey"/>
                                     </filter>
                                 </defs>
-                                <rect width={`${vu_config[imgIndex-1].pointerWidth.toString()}`} height={`${vu_config[imgIndex-1].pointerLen.toString()}`} 
-                                      x="196" y="80" rx="3" ry="3" fill={`${vu_config[imgIndex-1].pointerColor}`} filter="url(#f1)" 
-                                      transform={`rotate(${vuRightAngle.toString()}, 200, 280)`}/>
-                                <circle r="15" cx="200" cy="280" fill="#000000" stroke="#F00F0F" strokeWidth="3" filter="url(#f1)"/>
+                                <rect width={`${vu_config[imgIndex-1].pointerWidth.toString()}`} 
+                                      height={`${vu_config[imgIndex-1].pointerLen.toString()}`} 
+                                      x={`${POINTER_X_CENTER - (vu_config[imgIndex-1].pointerWidth / 2)}`.toString()}
+                                      y={`${POINTER_Y_ORIGIN - vu_config[imgIndex-1].pointerLen}`.toString()} 
+                                      rx="5" ry="5" 
+                                      fill={`${vu_config[imgIndex-1].pointerColor}`} 
+                                      filter="url(#f2)" 
+                                      transform={`rotate(${vuRightAngle.toString()}, ${POINTER_X_CENTER}, ${POINTER_Y_ORIGIN})`}
+                                    />
                             </svg>
                         </span>
                     </li>
