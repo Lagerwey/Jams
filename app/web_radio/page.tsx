@@ -104,7 +104,6 @@ export default function WebRadio() {
       }
 
       rx_data = await res.json();
-      console.log(rx_data);
       setFirstTimeLoad(false);
     } catch (err) {
       console.error('Error occurred handling', proxy + RpUrl, err)

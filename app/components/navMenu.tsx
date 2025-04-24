@@ -27,8 +27,8 @@ export function NavMenu() {
                         <li className="">
                             <Link href="/" onClick={() => setNavMenu(!navmenu)}>
                             <div className="inline-block h-[100px] w-[100px] ml-8 mr-10 bg-amber-600 rounded-full shadow-gray-500 text-base text-center text-white leading-[45px] align-bottom">
-                                <i className="zmdi zmdi-play zmdi-hc-5x block w-full h-1/2 mt-2 text-center leading-[100px] text-white"/>
-                                Now Playing
+                                <b className="zmdi zmdi-play zmdi-hc-3x block w-full h-1/2 -mt-2 text-center leading-[100px] text-white"/>
+                                <b className="block mt-1">Now Playing</b>
                             </div>
                             </Link>
                         </li>
@@ -37,8 +37,8 @@ export function NavMenu() {
                         <li>
                             <Link href="/library"onClick={() => setNavMenu(!navmenu)}>
                             <div className="inline-block h-[100px] w-[100px] ml-8 mr-10 bg-amber-600 rounded-full shadow-gray-500 text-base text-center text-white leading-[45px] align-bottom">
-                                <i className="zmdi zmdi-playlist-audio zmdi-hc-5x block text-2xl w-full h-1/2 mt-2 text-center leading-[100px] text-white"/>
-                                Library
+                                <b className="zmdi zmdi-playlist-audio zmdi-hc-3x block w-full h-1/2 -mt-2 text-center leading-[100px] text-white"/>
+                                <b className="block mt-1">Library</b>
                             </div>
                             </Link>
                         </li>
@@ -47,8 +47,8 @@ export function NavMenu() {
                         <li>
                             <Link href="/clock" onClick={() => setNavMenu(!navmenu)}>
                             <div className="inline-block h-[100px] w-[100px] ml-8 mr-10 bg-amber-600 rounded-full shadow-gray-500 text-base text-center text-white leading-[45px] align-bottom">
-                                <i className="zmdi zmdi-time zmdi-hc-5x block text-6xl w-full h-1/2 mt-2 text-center leading-[100px] text-white"/>
-                                Clock
+                                <b className="zmdi zmdi-time zmdi-hc-3x block w-full h-1/2 -mt-1 text-center leading-[100px] text-white"/>
+                                <b className="block mt-2">Clock</b>
                             </div>
                             </Link>
                         </li>
@@ -57,8 +57,8 @@ export function NavMenu() {
                         <li>
                             <Link href="/web_radio"onClick={() => setNavMenu(!navmenu)}>
                                 <div className="inline-block h-[100px] w-[100px] ml-8 mr-10 bg-amber-600 rounded-full shadow-gray-500 text-base text-center text-white leading-[45px] align-bottom">
-                                    <i className="zmdi zmdi-radio zmdi-hc-5x block text-6xl w-full h-1/2 mt-2 text-center leading-[100px] text-white"/>
-                                    Web Radio
+                                    <b className="zmdi zmdi-radio zmdi-hc-3x block w-full h-1/2 -mt-2 text-center leading-[100px] text-white"/>
+                                    <b className="block mt-2">Web Radio</b>
                                 </div>
                             </Link>
                         </li>
@@ -67,8 +67,8 @@ export function NavMenu() {
                         <li>
                             <Link href="/vu-meters"onClick={() => setNavMenu(!navmenu)}>
                                 <div className="inline-block h-[100px] w-[100px] ml-8 mr-10 bg-amber-600 rounded-full shadow-gray-500 text-base text-center text-white leading-[45px] align-bottom">
-                                    <i className="zmdi zmdi-equalizer zmdi-hc-5x block text-6xl w-full h-1/2 mt-2 text-center leading-[100px] text-white"/>
-                                    VU-Meters
+                                    <b className="zmdi zmdi-equalizer zmdi-hc-3x block w-full h-1/2 -mt-2 text-center leading-[100px] text-white"/>
+                                    <b className="block mt-2">VU-Meters</b>
                                 </div>
                             </Link>
                         </li>
@@ -77,8 +77,8 @@ export function NavMenu() {
                         <li>
                             <Link href="/settings"onClick={() => setNavMenu(!navmenu)}>
                                 <div className="inline-block h-[100px] w-[100px] ml-8 mr-10 bg-amber-600 rounded-full shadow-gray-500 text-base text-center text-white leading-[45px] align-bottom">
-                                    <i className="zmdi zmdi-settings zmdi-hc-5x block text-6xl w-full h-1/2 mt-2 text-center leading-[100px] text-white"/>
-                                    Settings
+                                    <b className="zmdi zmdi-settings zmdi-hc-3x block w-full h-1/2 -mt-2 text-center leading-[100px] text-white"/>
+                                    <b className="block mt-2">Settings</b>
                                 </div>
                             </Link>
                         </li>
