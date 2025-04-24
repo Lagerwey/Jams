@@ -27,11 +27,11 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 some screen shots:
 
 ![Roon now playing ](/screenshots/Screenshot_1.png)
-![Roon library selector ](/Screenshots/Screenshot_2.png)
-![clock and weather ](/Screenshots/Screenshot_3.png)
-![Radio Paradise player](/Screenshots/Screenshot_4.png)
-![VU meters (roon only)](/Screenshots/Screenshot_5.png)
-![settings page ](/Screenshots/Screenshot_6.png)
-![navigation menu ](/Screenshots/Screenshot_7.png)
+![Roon library selector ](/screenshots/Screenshot_2.png)
+![clock and weather ](/screenshots/Screenshot_3.png)
+![Radio Paradise player](/screenshots/Screenshot_4.png)
+![VU meters (roon only)](/screenshots/Screenshot_5.png)
+![settings page ](/screenshots/Screenshot_6.png)
+![navigation menu ](/screenshots/Screenshot_7.png)
 
 
