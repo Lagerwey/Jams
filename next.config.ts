@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    webpack: (config) => {
+    webpack: (config: { resolve: any }) => {
         config.resolve = {
           ...config.resolve,
           fallback: {

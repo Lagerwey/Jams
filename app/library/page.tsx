@@ -86,7 +86,7 @@ export default function Library() {
           (itemListRef.current as any).scrollTo(0, 0) as any;
         }
 
-        if (showData.list === undefined) {
+        if ((showData === undefined) || (showData.list === undefined)) {
           setDisableBottomLine(true);
           return;
         }
@@ -166,13 +166,13 @@ export default function Library() {
         const res = await fetch('/roonapi/goRefreshBrowse', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
-          body: JSON.stringify(tx_data)
+          body: JSON.stringify(tx_data),
         });
        
         const rx_data = await res.json();
-        setShowData(rx_data.data)
+        setShowData(rx_data);
         
         return;
       }
@@ -213,7 +213,7 @@ export default function Library() {
       });
      
       const rx_data = await res.json();
-      setShowData(rx_data.data);
+      setShowData(rx_data);
 
       return;
     }
@@ -273,7 +273,7 @@ export default function Library() {
     const ShowItems = () => {     
       const [enableKeyBoard, setEnableKeyBoard] = useState(false);
 
-      if (showData.items === undefined) 
+      if ((showData === undefined) || (showData.items === undefined)) 
           return [];
           
       return showData.items.map((item:any, key:number) => (        
@@ -323,7 +323,7 @@ export default function Library() {
       });
      
       const rx_data = await res.json();
-      setShowData(rx_data.data);
+      setShowData(rx_data);
 
       return;
     }
@@ -346,7 +346,7 @@ export default function Library() {
       });
      
       const rx_data = await res.json();
-      setShowData(rx_data.data);
+      setShowData(rx_data);
 
       return;
     }
@@ -365,7 +365,7 @@ export default function Library() {
       });
      
       const rx_data = await res.json();
-      setShowData(rx_data.data);
+      setShowData(rx_data);
 
       return;
     }
@@ -384,7 +384,7 @@ export default function Library() {
       });
      
       const rx_data = await res.json();
-      setShowData(rx_data.data);
+      setShowData(rx_data);
 
       return;
     }
@@ -402,7 +402,7 @@ export default function Library() {
                     <LibNavButton btn={display_name} onClick={() => setZoneSelShow(true)} cname="h-10 w-10 mr-8 mt-auto mb-auto text-[#eff0f1]" />
                </div>
             </div>
-
+            {showData &&
             <div id="content" ref={itemListRef} className={`absolute top-12 left-0 right-0  overflow-auto z-[6] ${disableBottomLine ? "bottom-0" : "bottom-12"}`}>
                 <div id="listContainer" className="flex flex-row justify-around max-h-[130px]">
                     <div id="padding" className="flex w-1/5 max-h-full"></div>
@@ -418,9 +418,9 @@ export default function Library() {
                   <ShowItems />
                 </div>
             </div>
-            
+            }
             {
-            !disableBottomLine &&
+            !disableBottomLine && showData &&
             <div id="navLineBottom" className="absolute left-0 right-0 bottom-[2px] h-[40px] z-[6]">
                 <div className="h-full flex flex-row flex-wrap items-center align-middle justify-center">
                     <LibNavButton btn="prev" onClick={() => getPage(showData.list.display_offset - 100)} cname={`h-10 w-10 mt-auto mb-auto ${disablePrevBtn ? "text-gray-600" : "text-[#eff0f1]"}`} disabled={disablePrevBtn}/>
@@ -429,7 +429,7 @@ export default function Library() {
                 </div>
             </div>
             }
-
+          
             <ShowZoneSelector zoneIds={payloadids} display_names={displayNames} ZoneSelShow={ZoneSelShow} />
 
         </main>

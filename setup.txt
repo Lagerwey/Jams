@@ -12,7 +12,7 @@ alsa sound (vu meters)
 - ./configure && make
 - sudo make install
 - cp alsa-config/asound.conf ~/.asoundrc
-- edit .asoundrc set fifo's to /tmp (ramfs)
-- alsaloop -A 2 -C hw:Loopback,0,0 -P "peppyalsa" -l 2000
+- edit .asoundrc set fifo's to /tmp 
+- alsaloop -A 2 -C hw:Loopback,0,0 -P "peppyalsa" -A2 -n
 
 

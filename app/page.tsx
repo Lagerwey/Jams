@@ -29,10 +29,10 @@ interface ChangeVolume {
 }
 
 var g_settings:SettingsType = {} as SettingsType;
+var coverimage_url:string = "";
+var g_curZone:IfcRoonZoneApi = {} as IfcRoonZoneApi;
 
 export default function Home() {
-  var coverimage_url:string = "";
-  var g_curZone:IfcRoonZoneApi = {} as IfcRoonZoneApi;
   const [pairState, setPairState] = useState(false);
   const [ZoneSelShow, setZoneSelShow] = useState(false);
   const [display_name, setdisplay_name] = useState("None");
@@ -88,7 +88,7 @@ export default function Home() {
         for (var x in payload) {
           if (payload[x].zone_id === g_settings.zoneID) {
             g_curZone = payload[x];
-            setCurZone({...payload[x]});
+            setCurZone(g_curZone);
             if (g_curZone.outputs[0].volume === undefined) {
               setVolume("fixed");
             } else {
@@ -101,7 +101,6 @@ export default function Home() {
           setZoneSelShow(true);
         }
       } else {
-        setCurZone(initZone);
         g_curZone = initZone;
         setZoneSelShow(true);
       }
@@ -109,7 +108,7 @@ export default function Home() {
     });
 
     setShowPlayer((pairState) && (!ZoneSelShow));
-  }, [pairState, ZoneSelShow, curZone.now_playing]);
+  }, [pairState, ZoneSelShow, curZone]);
 
   useEffect(() => {
     if (textLine1Ref.current) {
@@ -315,7 +314,7 @@ export default function Home() {
       // state.image_key = curZone.now_playing.image_key;
   
       if (curZone.now_playing.image_key === undefined) {
-        coverimage_url = "/no_image.webp";
+        coverimage_url = "/no_image.jpg";
       } else {
         coverimage_url =
             "/roonapi/getImage?image_key=" + curZone.now_playing.image_key;
@@ -323,7 +322,7 @@ export default function Home() {
     }
     return (
       <>  
-      <Image src={coverimage_url} alt={`Cover art for ${curZone.now_playing.one_line.line1}`} fill={true} sizes="(max-width: 400px)"/>
+      <Image src={coverimage_url} alt="Cover art now playing" fill={true} sizes="(max-width: 400px)"/>
       </>
   )};
   
@@ -353,23 +352,23 @@ export default function Home() {
   }
 
   function changePlayMode() {
-    if (curZone.is_play_allowed) {
-      SendCmd("play", curZone.zone_id);
-    } else if (curZone.is_pause_allowed) {
-      SendCmd("pause", curZone.zone_id);
+    if (g_curZone.is_play_allowed) {
+      SendCmd("play", g_curZone.zone_id);
+    } else if (g_curZone.is_pause_allowed) {
+      SendCmd("pause", g_curZone.zone_id);
     } else {
-      SendCmd("stop", curZone.zone_id);
+      SendCmd("stop", g_curZone.zone_id);
     }
   }
 
   function sendNextCommand () {
-    if (curZone.is_next_allowed) {
-      SendCmd("next", curZone.zone_id);
+    if (g_curZone.is_next_allowed) {
+      SendCmd("next", g_curZone.zone_id);
     }
   }
   function sendPrevCommand () {
-    if (curZone.is_previous_allowed) {
-      SendCmd("prev", curZone.zone_id);
+    if (g_curZone.is_previous_allowed) {
+      SendCmd("prev", g_curZone.zone_id);
     }
   }
 
@@ -382,14 +381,14 @@ export default function Home() {
   }
 
   function auto_radio_change() {
-    if (curZone.settings.auto_radio === true) {
+    if (g_curZone.settings.auto_radio === true) {
       changeZoneSetting("auto_radio", "false");
     } else {
       changeZoneSetting("auto_radio", "true");
     }
   }
   function shuffle_change() {
-    if (curZone.settings.shuffle === true) {
+    if (g_curZone.settings.shuffle === true) {
       changeZoneSetting("shuffle", "false");
     } else {
       changeZoneSetting("shuffle", "true");
@@ -407,7 +406,7 @@ export default function Home() {
 
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24 bg-black text-white">
+    <main className="flex min-h-screen bg-black text-white">
       <ShowPairedMsg state={pairState} />
       <ShowZoneSelector zoneIds={payloadids} display_names={displayNames} ZoneSelShow={ZoneSelShow} />
       <ShowNoActivity />
@@ -417,12 +416,12 @@ export default function Home() {
       {showPlayer && (curZone.now_playing !== undefined) &&
       <>
         {/* Cover image on the left side of the screen */}
-        <div id="CoverImage" className="absolute left-3 inset-0 w-[400px] h-[400px]">
+        <div id="CoverImage" className="absolute inset-0 w-[400px] h-[400px]">
           <ShowCoverImage />
         </div>
         
         {/* Music info on the top right side of the screen */}
-        <div id="MusicInfo" className="absolute right-0 inset-0 ml-[460px] w-[740px] h-full overflow-x-hidden">
+        <div id="MusicInfo" className="absolute right-0 inset-0 ml-[420px] w-[800px] h-full overflow-x-hidden">
           <div id="line1" className="min-w-full overflow-x-hidden whitespace-nowrap">
             <div className={`relative flex ${(textScrollingLine1) ? "" : "justify-center"}`}>
               <ul className={`text-white font-bold text-5xl mt-12 mb-6 ${(textScrollingLine1) ? "animate-marquee" : ""}`}>
@@ -441,13 +440,13 @@ export default function Home() {
           </div> 
           <div id="line2" className="min-w-full overflow-x-hidden whitespace-nowrap">
              <div className={`relative flex ${(textScrollingLine2) ? "" : "justify-center"}`}>
-              <ul className={`text-white text-3xl mb-4 ${(textScrollingLine2) ? "animate-marquee" : ""}`}>
+              <ul className={`text-white text-4xl mb-2 ${(textScrollingLine2) ? "animate-marquee" : ""}`}>
                 <li ref={textLine2Ref} value="" className={`${(textScrollingLine2) ? "mr-16" : ""}`}>
                   {curZone.now_playing.two_line.line2}
                 </li>
               </ul>
               {textScrollingLine2 && 
-              <ul className={`absolute top-0 text-white text-3xl mb-4 ${(textScrollingLine2) ? "animate-marquee2" : ""}`}>
+              <ul className={`absolute top-0 text-white text-4xl mb-2 ${(textScrollingLine2) ? "animate-marquee2" : ""}`}>
                 <li className="mr-16">
                   {curZone.now_playing.two_line.line2}
                 </li>
@@ -457,17 +456,17 @@ export default function Home() {
           </div> 
           
           {/* Music player controls on the bottom right side of the screen */}
-          <div id="PlayerControls" className="flex w-full justify-between mt-4">
+          <div id="PlayerControls" className="flex justify-between mt-4 ml-16 mr-12">
             <ControlButton btn="prev" onClick={() => sendPrevCommand()} cname={`h-14 w-14 mt-auto mb-auto ${(curZone.is_previous_allowed) ? "" : "text-neutral-500"}`} />
             <ControlButton btn={playBtn} onClick={() => changePlayMode()} cname="h-20 w-20 mt-auto mb-auto" />
             <ControlButton btn="next" onClick={() => sendNextCommand()} cname={`h-14 w-14 mt-auto mb-auto ${(curZone.is_next_allowed) ? "" : "text-neutral-500"}`} />
           </div>
-          <div id="TrackSeek" className="">
+          <div id="TrackSeek" className="ml-16 mr-12">
             <span id="TrackSeekContainer">
               <progress id="TrackProgress" value={(curZone.now_playing.length === 0) ? 0 : (curZone.now_playing.seek_position / curZone.now_playing.length)} max="1" className="w-full rounded-full bg-neutral-600" />
             </span>
           </div>
-          <div id="controlsSettings" className="flex w-full justify-between mt-3">
+          <div id="controlsSettings" className="flex justify-between mt-3 ml-16 mr-12">
             <ControlButton btn={(curZone.settings.loop === 'disabled') ? "loop" : curZone.settings.loop} onClick={() => loop_change()} cname={`h-10 w-10 mt-auto mb-auto ${(curZone.settings.loop !== 'disabled') ? "text-green-500" : ""}`} />
             <ControlButton btn="shuffle" onClick={() => shuffle_change()} cname={`h-10 w-10 mt-auto mb-auto ${(curZone.settings.shuffle) ? "text-green-500" : ""}`} />
             <ControlButton btn="radio" onClick={() => auto_radio_change()} cname={`h-10 w-10 mt-auto mb-auto ${(curZone.settings.auto_radio) ? "text-green-500" : ""}`} /> 
@@ -480,14 +479,16 @@ export default function Home() {
       }
       </div>
 
+      {/*
       <div id="ZoneSelect" className="absolute flex inset-0 w-full h-full justify-end z-[1]"> 
-          <div className="relative mt-64 -mr-3 z-0">
-            <span className="flex -rotate-90 text-xl text-neutral-400">
+          <div className="relative mt-32 -mr-3 z-0">
+            <span className="flex -rotate-90  text-xl text-neutral-400">
               {display_name}
             </span>
           </div>
           
       </div>
+      */}
     </main>
   );
 }

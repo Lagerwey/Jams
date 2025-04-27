@@ -2,10 +2,11 @@
   "name": "jams",
   "version": "1.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "node server.js --turbo",
+    "dev": "node server.ts --turbopack",
     "build": "next build",
-    "start": "node server.js --turbo",
+    "start": "node server.ts --turbopack",
     "lint": "next lint"
   },
   "dependencies": {
@@ -54,9 +55,12 @@
     "tailwindcss": "3.3.3",
     "tls": "^0.0.1",
     "typescript": "5.1.6",
-    "utf-8-validate": "^6.0.3"
+    "utf-8-validate": "^6.0.3",
+    "ws": "^8.18.1"
   },
   "devDependencies": {
-    "@types/react-howler": "^5.2.0"
+    "@types/express": "^5.0.1",
+    "@types/react-howler": "^5.2.0",
+    "@types/ws": "^8.18.1"
   }
 }

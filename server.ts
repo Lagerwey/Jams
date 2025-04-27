@@ -1,29 +1,42 @@
-
-const { parse } = require('url')
-const next = require('next')
-const bodyParser = require('body-parser')
-const express = require('express')
-const fs = require('fs');
-const net = require('net');
-const { exec } = require("child_process");
+//import { createServer, IncomingMessage, Server, ServerResponse } from "node:http";
+import { parse } from 'node:url';
+import next from 'next';
+import { WebSocket, WebSocketServer } from 'ws';
+//import { Socket } from 'node:net';
+import { Server } from "socket.io";
+import * as fs from 'fs';
+import { exec } from 'child_process';
+import * as net from 'net';
+import express from 'express';
+import bodyParser from 'body-parser';
 
 // Setup Roon
-var RoonApi = require("node-roon-api");
-var RoonApiImage = require("node-roon-api-image");
-var RoonApiStatus = require("node-roon-api-status");
-var RoonApiTransport = require("node-roon-api-transport");
-var RoonApiBrowse = require("node-roon-api-browse");
+// @ts-ignore
+import RoonApi from 'node-roon-api';
+// @ts-ignore
+import RoonApiImage from 'node-roon-api-image';
+// @ts-ignore
+import RoonApiStatus from 'node-roon-api-status';
+// @ts-ignore
+import RoonApiTransport from 'node-roon-api-transport';
+// @ts-ignore
+import RoonApiBrowse from 'node-roon-api-browse';
+
 
 // Setup general variables
 var EnvPort = Number(process.env.NEXT_PUBLIC_LISTEN_PORT);
 const dev = process.env.NODE_ENV !== 'production'
 
+// when using middleware `hostname` and `port` must be provided below
+const nextApp = next({ dev })
+const handleNextRequests = nextApp.getRequestHandler()
+
 const hostname = 'localhost'
-var core, transport;
-var pairStatus = 0;
-var zoneStatus = [];
-var zoneList = [];
-var webSock;
+var core: { services: { RoonApiImage: { get_image: (arg0: any, arg1: { scale: string; width: number; height: number; format: string; }, arg2: (cb: any, contentType: any, body: any) => void) => void; }; RoonApiBrowse: { browse: (arg0: any, arg1: (error: any, payload: any) => void) => void; load: (arg0: { hierarchy: string; offset: any; set_display_offset: any; }, arg1: { (error: any, payload: any): void; (error: any, payload: any): void; }) => void; }; }; };
+var transport: { subscribe_zones: (arg0: (response: any, data: any) => void) => void; change_volume: (arg0: any, arg1: string, arg2: any) => void; change_settings: (arg0: any, arg1: any[], arg2: (error: any) => void) => void; control: (arg0: any, arg1: string) => void; };
+var pairStatus = false;
+var zoneStatus: any[] = [];
+var zoneList: any[] = [];
 var selected_zone_id;
 var ir_recv_fifo_name = "./ir_fifo"
 var vu_meter_fifo_name = "/tmp/myfifo"
@@ -34,24 +47,23 @@ if (EnvPort) {
 } else {
   var listenPort = 3000;
 }
-var webSocketPort = listenPort + 1;
-var ws_port_vu = listenPort + 2;
+var roonWebSockPort = listenPort + 1;
+var vuMeterWebSockPort = listenPort + 2;
 
-var webSock = require("socket.io")(webSocketPort, {
-    cors: {
-      origin: [`http://${hostname}:${webSocketPort}`],
-    },});
-
-var webSockVU = require("socket.io")(ws_port_vu, {
+//var roonWebSock = new WebSocket(`ws://${hostname}:${roonWebSockPort}`);
+//var vuMeterWebSock = new WebSocket(`ws://${hostname}:${vuMeterWebSockPort}`);
+var roonWebSock = new Server(roonWebSockPort, {
   cors: {
-    origin: [`http://${hostname}:${ws_port_vu}`],
+    origin: [`http://${hostname}:${roonWebSockPort}`],
   },});
 
-// when using middleware `hostname` and `port` must be provided below
-const app = next({ dev })
-const handleNextRequests = app.getRequestHandler()
+var vuMeterWebSock = new Server(vuMeterWebSockPort, {
+cors: {
+  origin: [`http://${hostname}:${vuMeterWebSockPort}`],
+},});
 
-exec("rm -f " + ir_recv_fifo_name + "; mkfifo " + ir_recv_fifo_name, function(error, stdout, stderr) {
+
+exec("rm -f " + ir_recv_fifo_name + "; mkfifo " + ir_recv_fifo_name, function(error: any, stdout: any, stderr: any) {
   if (error) {
     console.log(error);
     return;
@@ -59,15 +71,15 @@ exec("rm -f " + ir_recv_fifo_name + "; mkfifo " + ir_recv_fifo_name, function(er
 });
 
 
-webSockVU.on("connection", function(socket) {
+vuMeterWebSock.on("connection", function() {
 
-  fs.open(vu_meter_fifo_name, fs.constants.O_RDWR | fs.constants.O_NONBLOCK, (err, fd) => {
+  fs.open(vu_meter_fifo_name, fs.constants.O_RDWR | fs.constants.O_NONBLOCK, (err: any, fd: any) => {
     const pipe = new net.Socket({ fd });
     // Now `pipe` is a stream that can be used for reading from the FIFO.
-    pipe.on('data', (data) => {
+    pipe.on('data', (data: string | any[]) => {
       // process data ...
         var uint16Arr = convert(data);
-        webSockVU.emit("vu_data", uint16Arr);
+        vuMeterWebSock.emit("vu_data", uint16Arr);
     });
 
     // Handle err
@@ -76,7 +88,7 @@ webSockVU.on("connection", function(socket) {
     }
   });
 
-  function convert(byteArray) {
+  function convert(byteArray: string | any[]) {
     var value = [];
     for (var i = 0, k = 0; i < byteArray.length; i += 2, k++) {
         value[k] = ( byteArray[i+1] * 256) + byteArray[i];
@@ -89,62 +101,56 @@ webSockVU.on("connection", function(socket) {
 
 
 
-app.prepare().then(() => {
-  const server = express()
+nextApp.prepare().then(() => {
+  const server = express();
 
-  server.use(bodyParser.json({ limit: '5mb' }))
+  server.use(bodyParser.json({ limit: '5MB' }))
 
   server.all('*', (req, res) => {
-
     try {
-      
       // Be sure to pass `true` as the second argument to `url.parse`.
       // This tells it to parse the query portion of the URL.
-      const parsedUrl = parse(req.url, true)
-            
+      const parsedUrl = parse(req.url || '', true)
+      
       if (parsedUrl.query.url !== undefined &&
-          parsedUrl.query.url.startsWith('/roonapi/getImage')) {
-        var split_str = parsedUrl.query.url.split('=');
+        String(parsedUrl.query.url).startsWith('/roonapi/getImage')) {
+        var split_str = String(parsedUrl.query.url).split('=');
         var image_key = split_str[1];
         core.services.RoonApiImage.get_image(
           image_key,
           { scale: "fit", width: 1080, height: 1080, format: "image/jpeg" },
           function(cb, contentType, body) {
             res.contentType = contentType;
-      
+
             res.writeHead(200, { "Content-Type": "image/jpeg" });
             res.end(body, "binary");
           }
         );
       } else if (parsedUrl.href !== undefined &&
                  parsedUrl.href.startsWith('/roonapi/goRefreshBrowse')) {
-        console.log(req.body);
         refresh_browse(req.body.zone_id, req.body.options, function(payload) {
-          res.send({ data: payload });
+          res.send(payload);
         });
       } else if (parsedUrl.href !== undefined &&
                  parsedUrl.href.startsWith('/roonapi/goLoadBrowse')) {
-        load_browse(req.body.listoffset, function(payload) {
-          res.send({ data: payload });
+        load_browse(req.body.listoffset, function(payload: any) {
+          res.send(payload);
         });
       } else {
         handleNextRequests(req, res);
       }
     } catch (err) {
-            console.error('Error occurred handling', req.url, err)
-            res.statusCode = 500
-            res.end('internal server error')
-          }
-    
+      console.error('Error occurred handling', req.url, err)
+      res.statusCode = 500
+      res.end('internal server error')
+    }
   })
 
-  server.listen(listenPort, (err) => {
+  server.listen(listenPort, (err: any) => {
     if (err) {
       throw err
-    }
-
-    
-    console.log(`> Ready on http://localhost:${listenPort}`)
+    }    
+    console.log(`> Ready on http://localhost:${listenPort}`);
   })
 })
 
@@ -152,27 +158,27 @@ app.prepare().then(() => {
 var roon = new RoonApi({
   extension_id: "com.jams.control",
   display_name: "JAMS",
-  display_version: "1.2.0",
+  display_version: "2.0.0",
   publisher: "Marco Lagerwey",
-  // log_level: "none",
+  log_level: "none",
   email: "masked",
   website: "https://github.com/Lagerwey/Jams",
 
-  core_paired: function(core_) {
+  core_paired: function(core_: { services: any; }) {
     core = core_;
 
     pairStatus = true;
-    webSock.emit("pairStatus", JSON.parse('{"pairEnabled": ' + pairStatus + "}"));
+    roonWebSock.emit("pairStatus", JSON.parse('{"pairEnabled": ' + pairStatus + "}"));
 
     transport = core_.services.RoonApiTransport;
 
     transport.subscribe_zones(function(response, data) {
-      var i, x, y, zone_id, display_name;
+      var i, x: string | number, y, zone_id, display_name;
       if (response == "Subscribed") {
         for (x in data.zones) {
           zone_id = data.zones[x].zone_id;
           display_name = data.zones[x].display_name;
-          var item = {};
+          var item:any = {};
           item.zone_id = zone_id;
           item.display_name = display_name;
 
@@ -192,7 +198,7 @@ var roon = new RoonApi({
                 }
               }
             }
-            webSock.emit("zoneStatus", zoneStatus);
+            roonWebSock.emit("zoneStatus", zoneStatus);
           } else if (i == "zones_added") {
             for (x in data.zones_added) {
               zone_id = data.zones_added[x].zone_id;
@@ -225,9 +231,9 @@ var roon = new RoonApi({
     });
   },
 
-  core_unpaired: function(core_) {
+  core_unpaired: function() {
     pairStatus = false;
-    webSock.emit("pairStatus", JSON.parse('{"pairEnabled": ' + pairStatus + "}"));
+    roonWebSock.emit("pairStatus", JSON.parse('{"pairEnabled": ' + pairStatus + "}"));
   }
 });
 
@@ -243,10 +249,10 @@ svc_status.set_status("Extension enabled", false);
 roon.start_discovery();
 
 // Remove duplicates from zoneList array
-function removeDuplicateList(array, property) {
+function removeDuplicateList(array: any[], property: string) {
   var x;
   var new_array = [];
-  var lookup = {};
+  var lookup:any = {};
   for (x in array) {
     lookup[array[x][property]] = array[x];
   }
@@ -256,14 +262,14 @@ function removeDuplicateList(array, property) {
   }
 
   zoneList = new_array;
-  webSock.emit("zoneList", zoneList);
+  roonWebSock.emit("zoneList", zoneList);
 }
 
 // Remove duplicates from zoneStatus array
-function removeDuplicateStatus(array, property) {
+function removeDuplicateStatus(array: any[], property: string) {
   var x;
   var new_array = [];
-  var lookup = {};
+  var lookup:any = {};
   for (x in array) {
     lookup[array[x][property]] = array[x];
   }
@@ -273,10 +279,10 @@ function removeDuplicateStatus(array, property) {
   }
 
   zoneStatus = new_array;
-  webSock.emit("zoneStatus", zoneStatus);
+  roonWebSock.emit("zoneStatus", zoneStatus);
 }
 
-function refresh_browse(zone_id, options, callback) {
+function refresh_browse(zone_id: any, options: any, callback: { (payload: any): void; (arg0: any): void; }) {
   options = Object.assign(
     {
       hierarchy: "browse",
@@ -294,9 +300,9 @@ function refresh_browse(zone_id, options, callback) {
     if (payload.action == "list") {
       var items = [];
       if (payload.list.display_offset > 0) {
-        var listoffset = payload.list.display_offset;
+        var listoffset:any = payload.list.display_offset;
       } else {
-        var listoffset = 0;
+        var listoffset:any = 0;
       }
       core.services.RoonApiBrowse.load(
         {
@@ -304,7 +310,7 @@ function refresh_browse(zone_id, options, callback) {
           offset: listoffset,
           set_display_offset: listoffset
         },
-        function(error, payload) {
+        function(_error, payload) {
           callback(payload);
         }
       );
@@ -312,14 +318,14 @@ function refresh_browse(zone_id, options, callback) {
   });
 }
 
-function load_browse(listoffset, callback) {
+function load_browse(listoffset: any, callback: { (payload: any): void; (arg0: any): void; }) {
   core.services.RoonApiBrowse.load(
     {
       hierarchy: "browse",
       offset: listoffset,
       set_display_offset: listoffset
     },
-    function(error, payload) {
+    function(_error, payload) {
       callback(payload);
     }
   );
@@ -368,21 +374,21 @@ function load_browse(listoffset, callback) {
 
 
 // // ---------------------------- WEB SOCKET --------------
-webSock.on("connection", function(socket) {
-  webSock.emit("pairStatus", JSON.parse('{"pairEnabled": ' + pairStatus + "}"));
-  webSock.emit("zoneList", zoneList);
-  webSock.emit("zoneStatus", zoneStatus);
+roonWebSock.on("connection", function(socket:any ) {
+  roonWebSock.emit("pairStatus", JSON.parse('{"pairEnabled": ' + pairStatus + "}"));
+  roonWebSock.emit("zoneList", zoneList);
+  roonWebSock.emit("zoneStatus", zoneStatus);
 
   socket.on("getZone", function() {
-    webSock.emit("zoneStatus", zoneStatus);
+    roonWebSock.emit("zoneStatus", zoneStatus);
   });
 
-  socket.on("changeVolume", function(msg) {
+  socket.on("changeVolume", function(msg: { output_id: any; volume: any; }) {
     transport.change_volume(msg.output_id, "absolute", msg.volume);
   });
 
-  socket.on("changeSetting", function(msg) {
-    var settings = [];
+  socket.on("changeSetting", function(msg: { setting: string; value: any; zone_id: any; }) {
+    var settings: any = {};
 
     if (msg.setting == "shuffle") {
       settings.shuffle = msg.value;
@@ -395,27 +401,27 @@ webSock.on("connection", function(socket) {
     transport.change_settings(msg.zone_id, settings, function(error) {});
   });
 
-  socket.on("goPrev", function(msg) {
+  socket.on("goPrev", function(msg: any) {
     transport.control(msg, "previous");
   });
 
-  socket.on("goNext", function(msg) {
+  socket.on("goNext", function(msg: any) {
     transport.control(msg, "next");
   });
 
-  socket.on("goPlayPause", function(msg) {
+  socket.on("goPlayPause", function(msg: any) {
     transport.control(msg, "playpause");
   });
 
-  socket.on("goPlay", function(msg) {
+  socket.on("goPlay", function(msg: any) {
     transport.control(msg, "play");
   });
 
-  socket.on("goPause", function(msg) {
+  socket.on("goPause", function(msg: any) {
     transport.control(msg, "pause");
   });
 
-  socket.on("goStop", function(msg) {
+  socket.on("goStop", function(msg: any) {
     transport.control(msg, "stop");
   });
 });
